@@ -142,5 +142,43 @@
       "https://imgur.com/tXaocxd.jpg",
       "https://imgur.com/swaeb9M.jpg"
     ]
-  }
+  },
+  {
+  "name": "Electricista José",
+  "category": "Electricistas",
+  "description": "Instalaciones eléctricas residenciales y comerciales.",
+  "location": "Santo Domingo",
+  "phone": "809-000-0000",
+  "whatsapp": "18090000000",
+
+  "rating": {
+    "score": "5.0",
+    "reviews": 26,
+    "stars": 5
+  },
+
+  "badges": [
+    {
+      "type": "offer",
+      "label": "1 oferta"
+    },
+    {
+      "type": "experience",
+      "label": "7 años"
+    },
+    {
+      "type": "verified",
+      "label": "Cédula verificada"
+    }
+  ],
+
+  "image": "https://imgur.com/BHNLMOx.jpg",
+
+  "gallery": [
+    "https://imgur.com/1JtWLu8.jpg",
+    "https://imgur.com/tXaocxd.jpg",
+    "https://imgur.com/swaeb9M.jpg",
+    "https://imgur.com/tXaocxd.jpg"
+  ]
+}
 ]
