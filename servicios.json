@@ -143,21 +143,25 @@
       "https://imgur.com/swaeb9M.jpg"
     ]
   },
-  {
-    "name": "JarDina",
-    "category": "Jardinería",
-    "description": "Servicios de jardinería empresarial y diseño de espacios verdes personalizados.",
-    "location": "Pantoja, Santo Domingo",
-    "phone": "809-000-1001",
-    "whatsapp": "18090001001",
-    "rating": "5.0",
-    "image": "https://imgur.com/BHNLMOx.jpg",
-    "gallery": [
-      "https://imgur.com/1JtWLu8.jpg",
-      "https://imgur.com/tXaocxd.jpg",
-      "https://imgur.com/swaeb9M.jpg"
-    ]
-  },
+ {
+  "name": "JarDina",
+  "category": "Paisajismo",
+  "description": "Servicios de jardinería empresarial y diseño de espacios verdes personalizados.",
+  "location": "Pantoja, Santo Domingo",
+  "phone": "809-000-1001",
+  "whatsapp": "18090001001",
+  "rating": "5.0",
+
+  "image": "https://imgur.com/hs4qsrq.jpg",
+
+  "gallery": [
+    "https://imgur.com/Eqw8yxO.jpg",
+    "https://imgur.com/GuYkkYh.jpg",
+    "https://imgur.com/l1v4Nns.jpg",
+    "https://imgur.com/UhjA5aE.jpg",
+    "https://imgur.com/KMD1q8M.jpg"
+  ]
+},
 
   {
     "name": "Deep Cleaning SRL",
