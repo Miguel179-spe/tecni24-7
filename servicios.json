@@ -273,7 +273,155 @@
       "https://imgur.com/tXaocxd.jpg",
       "https://imgur.com/swaeb9M.jpg"
     ]
+  },
+  {
+    "name": "El Plomero",
+    "category": "Plomeros",
+    "description": "Servicios profesionales de plomería residencial y comercial.",
+    "location": "Santo Domingo",
+    "phone": "+18496555472",
+    "whatsapp": "18496555472",
+    "rating": "4.9",
+    "image": "https://imgur.com/ZHIifl2.jpg",
+    "gallery": [
+      "https://imgur.com/Hv3ttps.jpg",
+      "https://imgur.com/1RyUpDl.jpg",
+      "https://imgur.com/H1ORO6z.jpg",
+	  "https://imgur.com/ffgxiaO.jpg"
+    ]
+  },
+
+  {
+    "name": "Plomeria En General",
+    "category": "Plomeros",
+    "description": "Instalación y reparación de tuberías, baños y cocinas.",
+    "location": "Santo Domingo",
+    "phone": "+18496555472",
+    "whatsapp": "18496555472",
+    "rating": "4.4",
+    "image": "https://imgur.com/nBf1AOa.jpg",
+    "gallery": [
+      "https://imgur.com/Wn5eDVM.jpg",
+      "https://imgur.com/eamorFt.jpg",
+      "https://imgur.com/RfXuwmZ.jpg",
+	  "https://imgur.com/Bc0OVde.jpg"
+    ]
+  },
+
+  {
+    "name": "Plomeros Expertos",
+    "category": "Plomeros",
+    "description": "Reparaciones de fugas, drenajes y sistemas sanitarios.",
+    "location": "Santo Domingo",
+    "phone": "+18496555472",
+    "whatsapp": "18496555472",
+    "rating": "4.5",
+    "image": "https://imgur.com/sPJTIWK.jpg",
+    "gallery": [
+      "https://imgur.com/F4S4rPS.jpg",
+      "https://imgur.com/QB91NAW.jpg",
+      "https://imgur.com/AugMPz2.jpg",
+	  "https://imgur.com/EKVie4o.jpg"
+    ]
+  },
+
+  {
+    "name": "Plomería y Destapes",
+    "category": "Plomeros",
+    "description": "Servicios rápidos de mantenimiento y reparación de plomería.",
+    "location": "Santo Domingo",
+    "phone": "+18496555472",
+    "whatsapp": "18496555472",
+    "rating": "4.1",
+    "image": "https://imgur.com/QAmzyCO.jpg",
+    "gallery": [
+      "https://imgur.com/FfpoRlH.jpg",
+      "https://imgur.com/n8ZZB98.jpg",
+      "https://imgur.com/QGrHdZa.jpg"
+    ]
+  },
+
+  {
+    "name": "Plomero RD",
+    "category": "Plomeros",
+    "description": "Servicios de plomería 24 horas para emergencias.",
+    "location": "San Pedro de Macorís",
+    "phone": "+18496555472",
+    "whatsapp": "18496555472",
+    "rating": "5.0",
+    "image": "https://imgur.com/6hRV3qD.jpg",
+    "gallery": [
+      "https://imgur.com/fAMNFZE.jpg",
+      "https://imgur.com/rbmfqCA.jpg",
+      "https://imgur.com/UDmiSFc.jpg"
+    ]
+  },
+
+  {
+    "name": "Plomeria Silverio",
+    "category": "Plomeros",
+    "description": "Destape de tuberías y mantenimiento de sistemas sanitarios.",
+    "location": "Santo Domingo",
+    "phone": "+18496555472",
+    "whatsapp": "18496555472",
+    "rating": "3.4",
+    "image": "https://imgur.com/tXaocxd.jpg",
+    "gallery": [
+      "https://imgur.com/BHNLMOx.jpg",
+      "https://imgur.com/swaeb9M.jpg",
+      "https://imgur.com/1JtWLu8.jpg"
+    ]
+  },
+
+  {
+    "name": "Plomeros en la Red",
+    "category": "Plomeros",
+    "description": "Soluciones de agua y drenaje para hogares y negocios.",
+    "location": "Santo Domingo",
+    "phone": "+18496555472",
+    "whatsapp": "18496555472",
+    "rating": "2.0",
+    "image": "https://imgur.com/swaeb9M.jpg",
+    "gallery": [
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/BHNLMOx.jpg",
+      "https://imgur.com/1JtWLu8.jpg"
+    ]
+  },
+
+  {
+    "name": "Plomerord",
+    "category": "Plomeros",
+    "description": "Instalación y reparación de sistemas de agua residenciales.",
+    "location": "Santo Domingo Este",
+    "phone": "+18496555472",
+    "whatsapp": "18496555472",
+    "rating": "1.0",
+    "image": "https://imgur.com/1JtWLu8.jpg",
+    "gallery": [
+      "https://imgur.com/BHNLMOx.jpg",
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/swaeb9M.jpg"
+    ]
+  },
+
+  {
+    "name": "Plomego",
+    "category": "Plomeros",
+    "description": "Servicios modernos de plomería para residencias y empresas.",
+    "location": "Santiago de los Caballeros",
+    "phone": "+18496555472",
+    "whatsapp": "18496555472",
+    "rating": "4.8",
+    "image": "https://imgur.com/BHNLMOx.jpg",
+    "gallery": [
+      "https://imgur.com/1JtWLu8.jpg",
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/swaeb9M.jpg"
+    ]
   }
+
+  
 ]
 
   
