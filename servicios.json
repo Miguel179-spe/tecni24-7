@@ -1,27 +1,21 @@
+
 [
- {
-  "name": "Electricista José",
-  "category": "Electricistas",
-  "description": "Instalaciones eléctricas residenciales y comerciales.",
-  "location": "Santo Domingo",
-  "phone": "809-000-0000",
-  "whatsapp": "18090000000",
-  "rating": "4.9",
-  "image": "https://i.imgur.com/BHNLMOx.jpg",
-  "gallery": [
-    "https://i.imgur.com/BHNLMOx.jpg",
-    "https://i.imgur.com/tXaocxd.jpg"
-  ]
-},
   {
-    "name": "Plomería Express",
-    "category": "Plomeros",
-    "description": "Destape de tuberías y reparación de fugas.",
-    "location": "Santiago",
-    "phone": "829-000-0000",
-    "whatsapp": "18290000000",
-    "rating": "4.7",
-    "image": "https://i.imgur.com/efgh456.jpg"
+    "name": "Electricista José",
+    "category": "Electricistas",
+    "description": "Instalaciones eléctricas residenciales y comerciales.",
+    "location": "Santo Domingo",
+    "phone": "809-000-0000",
+    "whatsapp": "18090000000",
+    "rating": "4.9",
+    "image": "https://i.imgur.com/abcd123.jpg",
+
+    "gallery": [
+      "https://i.imgur.com/img1.jpg",
+      "https://i.imgur.com/img2.jpg",
+      "https://i.imgur.com/img3.jpg",
+      "https://i.imgur.com/img4.jpg"
+    ]
   }
 ]
 
