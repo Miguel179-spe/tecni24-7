@@ -405,5 +405,68 @@
       "https://imgur.com/OvmEr4O.jpg",
       "https://imgur.com/27V4ZSG.jpg"
     ]
+  }, 
+	{
+    "name": "ClimaFix RD",
+    "category": "Electricistas",
+    "description": "Refrigeración industrial, electricidad residencial y mantenimiento de aires acondicionados.",
+    "location": "Sabana Perdida, Santo Domingo",
+     "phone": "+18496555472",
+    "whatsapp": "18496555472"
+    "rating": "5.0",
+    "image": "https://imgur.com/dzbMcTE.jpg",
+    "gallery": [
+      "https://imgur.com/Wx1UVpf.jpg",
+      "https://imgur.com/t04oCbY.jpg",
+      "https://imgur.com/MmAFJ2L.jpg"
+    ]
+  },
+
+  {
+    "name": "Industrial Pro",
+    "category": "Electricistas",
+    "description": "Instalación, mantenimiento y reparación de equipos eléctricos y aires acondicionados.",
+    "location": "Distrito Nacional, Santo Domingo",
+     "phone": "+18496555472",
+    "whatsapp": "18496555472"
+    "rating": "5.0",
+    "image": "https://imgur.com/FdstZdI.jpg",
+    "gallery": [
+      "https://imgur.com/FdstZdI.jpg",
+      ".jpg",
+      ".jpg"
+    ]
+  },
+
+  {
+    "name": "AGS ElectroTech",
+    "category": "Electricistas",
+    "description": "Servicios eléctricos residenciales, turísticos y comerciales con más de 18 años de experiencia.",
+    "location": "Puerto Plata",
+     "phone": "+18496555472",
+    "whatsapp": "18496555472"
+    "rating": "4.9",
+    "image": "https://imgur.com/685rBAL.jpg",
+    "gallery": [
+      "https://imgur.com/685rBAL.jpg",
+      "https://imgur.com/LOH7afK.jpg",
+      "https://imgur.com/gK2Cfex.jpg"
+    ]
+  },
+
+  {
+    "name": "InnoTec Group",
+    "category": "Electricistas",
+    "description": "Instalación y mantenimiento de sistemas eléctricos y seguridad electrónica.",
+    "location": "Santo Domingo Este",
+     "phone": "+18496555472",
+    "whatsapp": "18496555472"
+    "rating": "4.8",
+    "image": "https://imgur.com/cgXffL5.jpg",
+    "gallery": [
+      "https://imgur.com/BHNLMOx.jpg",
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/swaeb9M.jpg"
+    ]
   }
 ]
