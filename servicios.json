@@ -16,6 +16,60 @@
       "https://imgur.com/swaeb9M.jpg",
       "https://imgur.com/tXaocxd.jpg"
     ]
+  },
+  {
+    "name": "Electricista José",
+    "category": "Plomeros",
+    "description": "Instalaciones eléctricas residenciales y comerciales.",
+    "location": "Santo Domingo",
+    "phone": "809-000-0000",
+    "whatsapp": "18090000000",
+    "rating": "4.9",
+    "image": "https://imgur.com/BHNLMOx.jpg",
+
+    "gallery": [
+      "https://imgur.com/1JtWLu8.jpg",
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/swaeb9M.jpg",
+      "https://imgur.com/tXaocxd.jpg"
+    ]
+  },
+  {
+    "name": "Electricista José",
+    "category": "Técnicos de aire acondicionado",
+    "description": "Instalaciones eléctricas residenciales y comerciales.",
+    "location": "Santo Domingo",
+    "phone": "809-000-0000",
+    "whatsapp": "18090000000",
+    "rating": "4.9",
+    "image": "https://imgur.com/BHNLMOx.jpg",
+
+    "gallery": [
+      "https://imgur.com/1JtWLu8.jpg",
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/swaeb9M.jpg",
+      "https://imgur.com/tXaocxd.jpg"
+    ]
+  },
+  {
+    "name": "Electricista José",
+    "category": "Técnicos de aire acondicionado",
+    "description": "Instalaciones eléctricas residenciales y comerciales.",
+    "location": "Santo Domingo",
+    "phone": "809-000-0000",
+    "whatsapp": "18090000000",
+    "rating": "4.9",
+    "image": "https://imgur.com/BHNLMOx.jpg",
+
+    "gallery": [
+      "https://imgur.com/1JtWLu8.jpg",
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/swaeb9M.jpg",
+      "https://imgur.com/tXaocxd.jpg"
+    ]
   }
+
+
+  
 ]
 
