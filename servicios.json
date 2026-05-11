@@ -48,15 +48,11 @@
 
     "rating": {
       "score": "4.8",
-      "reviews": 19,
+      "reviews": 18,
       "stars": 5
     },
 
     "badges": [
-      {
-        "type": "offer",
-        "label": "2 ofertas"
-      },
       {
         "type": "experience",
         "label": "5 años"
@@ -86,22 +82,18 @@
 
     "rating": {
       "score": "5.0",
-      "reviews": 34,
+      "reviews": 31,
       "stars": 5
     },
 
     "badges": [
       {
         "type": "offer",
-        "label": "3 ofertas"
+        "label": "2 ofertas"
       },
       {
         "type": "experience",
-        "label": "8 años"
-      },
-      {
-        "type": "verified",
-        "label": "Cédula verificada"
+        "label": "10 años"
       }
     ],
 
@@ -129,14 +121,6 @@
     },
 
     "badges": [
-      {
-        "type": "offer",
-        "label": "1 oferta"
-      },
-      {
-        "type": "experience",
-        "label": "6 años"
-      },
       {
         "type": "verified",
         "label": "Cédula verificada"
@@ -168,16 +152,8 @@
 
     "badges": [
       {
-        "type": "offer",
-        "label": "2 ofertas"
-      },
-      {
         "type": "experience",
-        "label": "4 años"
-      },
-      {
-        "type": "verified",
-        "label": "Cédula verificada"
+        "label": "6 años"
       }
     ],
 
@@ -200,7 +176,7 @@
 
     "rating": {
       "score": "4.9",
-      "reviews": 21,
+      "reviews": 22,
       "stars": 5
     },
 
@@ -208,10 +184,6 @@
       {
         "type": "offer",
         "label": "1 oferta"
-      },
-      {
-        "type": "experience",
-        "label": "9 años"
       },
       {
         "type": "verified",
@@ -238,22 +210,14 @@
 
     "rating": {
       "score": "4.8",
-      "reviews": 18,
+      "reviews": 19,
       "stars": 5
     },
 
     "badges": [
       {
-        "type": "offer",
-        "label": "2 ofertas"
-      },
-      {
         "type": "experience",
-        "label": "3 años"
-      },
-      {
-        "type": "verified",
-        "label": "Cédula verificada"
+        "label": "4 años"
       }
     ],
 
@@ -276,18 +240,14 @@
 
     "rating": {
       "score": "5.0",
-      "reviews": 30,
+      "reviews": 40,
       "stars": 5
     },
 
     "badges": [
       {
         "type": "offer",
-        "label": "4 ofertas"
-      },
-      {
-        "type": "experience",
-        "label": "10 años"
+        "label": "3 ofertas"
       },
       {
         "type": "verified",
@@ -320,16 +280,8 @@
 
     "badges": [
       {
-        "type": "offer",
-        "label": "1 oferta"
-      },
-      {
         "type": "experience",
-        "label": "7 años"
-      },
-      {
-        "type": "verified",
-        "label": "Cédula verificada"
+        "label": "8 años"
       }
     ],
 
