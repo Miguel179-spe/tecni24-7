@@ -405,6 +405,67 @@
       "https://imgur.com/OvmEr4O.jpg",
       "https://imgur.com/27V4ZSG.jpg"
     ]
+  }, 
+
+  {
+    "nombre": "ClimaFix RD",
+    "categoria": "Electricistas",
+    "descripcion": "Refrigeración industrial, electricidad residencial y mantenimiento de aires acondicionados.",
+    "ubicacion": "Sabana Perdida, Santo Domingo",
+    "telefono": "+1 (849) 655-5472",
+    "whatsapp": "18496555472",
+    "calificacion": 5.0,
+    "imagen": "https://i.imgur.com/dzbMcTE.jpg",
+    "galeria": [
+      "https://i.imgur.com/Wx1UVpf.jpg",
+      "https://i.imgur.com/t04oCbY.jpg",
+      "https://i.imgur.com/MmAFJ2L.jpg"
+    ]
+  },
+
+  {
+    "nombre": "Industrial Pro",
+    "categoria": "Electricistas",
+    "descripcion": "Instalación, mantenimiento y reparación de equipos eléctricos y aires acondicionados.",
+    "ubicacion": "Distrito Nacional, Santo Domingo",
+    "telefono": "+1 (849) 655-5472",
+    "whatsapp": "18496555472",
+    "calificacion": 5.0,
+    "imagen": "https://i.imgur.com/FdstZdI.jpg",
+    "galeria": [
+      "https://i.imgur.com/FdstZdI.jpg"
+    ]
+  },
+
+  {
+    "nombre": "AGS ElectroTech",
+    "categoria": "Electricistas",
+    "descripcion": "Servicios eléctricos residenciales, turísticos y comerciales con más de 18 años de experiencia.",
+    "ubicacion": "Puerto Plata, República Dominicana",
+    "telefono": "+1 (849) 655-5472",
+    "whatsapp": "18496555472",
+    "calificacion": 4.9,
+    "imagen": "https://i.imgur.com/685rBAL.jpg",
+    "galeria": [
+      "https://i.imgur.com/685rBAL.jpg",
+      "https://i.imgur.com/LOH7afK.jpg",
+      "https://i.imgur.com/gK2Cfex.jpg"
+    ]
+  },
+
+  {
+    "nombre": "InnoTec Group",
+    "categoria": "Electricistas",
+    "descripcion": "Instalación y mantenimiento de sistemas eléctricos y seguridad electrónica.",
+    "ubicacion": "Santo Domingo Este, República Dominicana",
+    "telefono": "+1 (849) 655-5472",
+    "whatsapp": "18496555472",
+    "calificacion": 4.8,
+    "imagen": "https://i.imgur.com/cgXffL5.jpg",
+    "galeria": [
+      "https://i.imgur.com/BHNLMOx.jpg",
+      "https://i.imgur.com/tXaocxd.jpg",
+      "https://i.imgur.com/swaeb9M.jpg"
+    ]
   }
-  
 ]
