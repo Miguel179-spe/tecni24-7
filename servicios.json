@@ -6,30 +6,8 @@
     "location": "Santo Domingo",
     "phone": "809-000-0001",
     "whatsapp": "18090000001",
-
-    "rating": {
-      "score": "5.0",
-      "reviews": 26,
-      "stars": 5
-    },
-
-    "badges": [
-      {
-        "type": "offer",
-        "label": "1 oferta"
-      },
-      {
-        "type": "experience",
-        "label": "7 años"
-      },
-      {
-        "type": "verified",
-        "label": "Cédula verificada"
-      }
-    ],
-
+    "rating": "4.9",
     "image": "https://imgur.com/BHNLMOx.jpg",
-
     "gallery": [
       "https://imgur.com/1JtWLu8.jpg",
       "https://imgur.com/tXaocxd.jpg",
@@ -45,26 +23,8 @@
     "location": "Santiago",
     "phone": "809-000-0002",
     "whatsapp": "18090000002",
-
-    "rating": {
-      "score": "4.8",
-      "reviews": 18,
-      "stars": 5
-    },
-
-    "badges": [
-      {
-        "type": "experience",
-        "label": "5 años"
-      },
-      {
-        "type": "verified",
-        "label": "Cédula verificada"
-      }
-    ],
-
+    "rating": "4.8",
     "image": "https://imgur.com/tXaocxd.jpg",
-
     "gallery": [
       "https://imgur.com/BHNLMOx.jpg",
       "https://imgur.com/1JtWLu8.jpg",
@@ -79,26 +39,8 @@
     "location": "Santo Domingo Este",
     "phone": "809-000-0003",
     "whatsapp": "18090000003",
-
-    "rating": {
-      "score": "5.0",
-      "reviews": 31,
-      "stars": 5
-    },
-
-    "badges": [
-      {
-        "type": "offer",
-        "label": "2 ofertas"
-      },
-      {
-        "type": "experience",
-        "label": "10 años"
-      }
-    ],
-
+    "rating": "5.0",
     "image": "https://imgur.com/swaeb9M.jpg",
-
     "gallery": [
       "https://imgur.com/tXaocxd.jpg",
       "https://imgur.com/BHNLMOx.jpg",
@@ -113,22 +55,8 @@
     "location": "La Romana",
     "phone": "809-000-0004",
     "whatsapp": "18090000004",
-
-    "rating": {
-      "score": "4.7",
-      "reviews": 15,
-      "stars": 5
-    },
-
-    "badges": [
-      {
-        "type": "verified",
-        "label": "Cédula verificada"
-      }
-    ],
-
+    "rating": "4.7",
     "image": "https://imgur.com/1JtWLu8.jpg",
-
     "gallery": [
       "https://imgur.com/BHNLMOx.jpg",
       "https://imgur.com/tXaocxd.jpg",
@@ -143,22 +71,8 @@
     "location": "San Cristóbal",
     "phone": "809-000-0005",
     "whatsapp": "18090000005",
-
-    "rating": {
-      "score": "4.6",
-      "reviews": 12,
-      "stars": 5
-    },
-
-    "badges": [
-      {
-        "type": "experience",
-        "label": "6 años"
-      }
-    ],
-
+    "rating": "4.6",
     "image": "https://imgur.com/BHNLMOx.jpg",
-
     "gallery": [
       "https://imgur.com/1JtWLu8.jpg",
       "https://imgur.com/tXaocxd.jpg",
@@ -173,26 +87,8 @@
     "location": "Santo Domingo Norte",
     "phone": "809-000-0006",
     "whatsapp": "18090000006",
-
-    "rating": {
-      "score": "4.9",
-      "reviews": 22,
-      "stars": 5
-    },
-
-    "badges": [
-      {
-        "type": "offer",
-        "label": "1 oferta"
-      },
-      {
-        "type": "verified",
-        "label": "Cédula verificada"
-      }
-    ],
-
+    "rating": "4.9",
     "image": "https://imgur.com/tXaocxd.jpg",
-
     "gallery": [
       "https://imgur.com/BHNLMOx.jpg",
       "https://imgur.com/1JtWLu8.jpg",
@@ -207,22 +103,8 @@
     "location": "Punta Cana",
     "phone": "809-000-0007",
     "whatsapp": "18090000007",
-
-    "rating": {
-      "score": "4.8",
-      "reviews": 19,
-      "stars": 5
-    },
-
-    "badges": [
-      {
-        "type": "experience",
-        "label": "4 años"
-      }
-    ],
-
+    "rating": "4.8",
     "image": "https://imgur.com/swaeb9M.jpg",
-
     "gallery": [
       "https://imgur.com/BHNLMOx.jpg",
       "https://imgur.com/tXaocxd.jpg",
@@ -237,26 +119,8 @@
     "location": "Santo Domingo Oeste",
     "phone": "809-000-0008",
     "whatsapp": "18090000008",
-
-    "rating": {
-      "score": "5.0",
-      "reviews": 40,
-      "stars": 5
-    },
-
-    "badges": [
-      {
-        "type": "offer",
-        "label": "3 ofertas"
-      },
-      {
-        "type": "verified",
-        "label": "Cédula verificada"
-      }
-    ],
-
+    "rating": "5.0",
     "image": "https://imgur.com/1JtWLu8.jpg",
-
     "gallery": [
       "https://imgur.com/BHNLMOx.jpg",
       "https://imgur.com/tXaocxd.jpg",
@@ -271,22 +135,8 @@
     "location": "Baní",
     "phone": "809-000-0009",
     "whatsapp": "18090000009",
-
-    "rating": {
-      "score": "4.7",
-      "reviews": 17,
-      "stars": 5
-    },
-
-    "badges": [
-      {
-        "type": "experience",
-        "label": "8 años"
-      }
-    ],
-
+    "rating": "4.7",
     "image": "https://imgur.com/BHNLMOx.jpg",
-
     "gallery": [
       "https://imgur.com/1JtWLu8.jpg",
       "https://imgur.com/tXaocxd.jpg",
