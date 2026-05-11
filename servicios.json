@@ -1,14 +1,18 @@
 [
-  {
-    "name": "Electricista José",
-    "category": "Electricistas",
-    "description": "Instalaciones eléctricas residenciales y comerciales.",
-    "location": "Santo Domingo",
-    "phone": "809-000-0000",
-    "whatsapp": "18090000000",
-    "rating": "4.9",
-    "image": "https://i.imgur.com/abcd123.jpg"
-  },
+ {
+  "name": "Electricista José",
+  "category": "Electricistas",
+  "description": "Instalaciones eléctricas residenciales y comerciales.",
+  "location": "Santo Domingo",
+  "phone": "809-000-0000",
+  "whatsapp": "18090000000",
+  "rating": "4.9",
+  "image": "https://i.imgur.com/BHNLMOx.jpg",
+  "gallery": [
+    "https://i.imgur.com/BHNLMOx.jpg",
+    "https://i.imgur.com/tXaocxd.jpg"
+  ]
+},
   {
     "name": "Plomería Express",
     "category": "Plomeros",
