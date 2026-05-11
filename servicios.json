@@ -16,22 +16,7 @@
     ]
   },
 
-  {
-    "name": "Plomería García",
-    "category": "Plomeros",
-    "description": "Reparación de tuberías y fugas de agua.",
-    "location": "Santiago",
-    "phone": "809-000-0002",
-    "whatsapp": "18090000002",
-    "rating": "4.8",
-    "image": "https://imgur.com/tXaocxd.jpg",
-    "gallery": [
-      "https://imgur.com/BHNLMOx.jpg",
-      "https://imgur.com/1JtWLu8.jpg",
-      "https://imgur.com/swaeb9M.jpg"
-    ]
-  },
-
+ 
   {
     "name": "Aires Fríos RD",
     "category": "Técnicos de aire acondicionado",
