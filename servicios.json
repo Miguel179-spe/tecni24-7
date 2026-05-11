@@ -1,15 +1,13 @@
-
 [
   {
     "name": "Electricista José",
     "category": "Electricistas",
     "description": "Instalaciones eléctricas residenciales y comerciales.",
     "location": "Santo Domingo",
-    "phone": "809-000-0000",
-    "whatsapp": "18090000000",
+    "phone": "809-000-0001",
+    "whatsapp": "18090000001",
     "rating": "4.9",
     "image": "https://imgur.com/BHNLMOx.jpg",
-
     "gallery": [
       "https://imgur.com/1JtWLu8.jpg",
       "https://imgur.com/tXaocxd.jpg",
@@ -17,59 +15,132 @@
       "https://imgur.com/tXaocxd.jpg"
     ]
   },
+
   {
-    "name": "Electricista José",
+    "name": "Plomería García",
     "category": "Plomeros",
-    "description": "Instalaciones eléctricas residenciales y comerciales.",
-    "location": "Santo Domingo",
-    "phone": "809-000-0000",
-    "whatsapp": "18090000000",
-    "rating": "4.9",
-    "image": "https://imgur.com/BHNLMOx.jpg",
-
+    "description": "Reparación de tuberías y fugas de agua.",
+    "location": "Santiago",
+    "phone": "809-000-0002",
+    "whatsapp": "18090000002",
+    "rating": "4.8",
+    "image": "https://imgur.com/tXaocxd.jpg",
     "gallery": [
+      "https://imgur.com/BHNLMOx.jpg",
       "https://imgur.com/1JtWLu8.jpg",
-      "https://imgur.com/tXaocxd.jpg",
-      "https://imgur.com/swaeb9M.jpg",
-      "https://imgur.com/tXaocxd.jpg"
+      "https://imgur.com/swaeb9M.jpg"
     ]
   },
-  {
-    "name": "Electricista José",
-    "category": "Técnicos de aire acondicionado",
-    "description": "Instalaciones eléctricas residenciales y comerciales.",
-    "location": "Santo Domingo",
-    "phone": "809-000-0000",
-    "whatsapp": "18090000000",
-    "rating": "4.9",
-    "image": "https://imgur.com/BHNLMOx.jpg",
 
+  {
+    "name": "Aires Fríos RD",
+    "category": "Técnicos de aire acondicionado",
+    "description": "Instalación y mantenimiento de aire acondicionado.",
+    "location": "Santo Domingo Este",
+    "phone": "809-000-0003",
+    "whatsapp": "18090000003",
+    "rating": "5.0",
+    "image": "https://imgur.com/swaeb9M.jpg",
     "gallery": [
-      "https://imgur.com/1JtWLu8.jpg",
       "https://imgur.com/tXaocxd.jpg",
-      "https://imgur.com/swaeb9M.jpg",
-      "https://imgur.com/tXaocxd.jpg"
+      "https://imgur.com/BHNLMOx.jpg",
+      "https://imgur.com/1JtWLu8.jpg"
     ]
   },
-  {
-    "name": "Electricista José",
-    "category": "Técnicos de aire acondicionado",
-    "description": "Instalaciones eléctricas residenciales y comerciales.",
-    "location": "Santo Domingo",
-    "phone": "809-000-0000",
-    "whatsapp": "18090000000",
-    "rating": "4.9",
-    "image": "https://imgur.com/BHNLMOx.jpg",
 
+  {
+    "name": "Cerrajería Express",
+    "category": "Cerrajeros",
+    "description": "Apertura de puertas y cambio de cerraduras.",
+    "location": "La Romana",
+    "phone": "809-000-0004",
+    "whatsapp": "18090000004",
+    "rating": "4.7",
+    "image": "https://imgur.com/1JtWLu8.jpg",
+    "gallery": [
+      "https://imgur.com/BHNLMOx.jpg",
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/swaeb9M.jpg"
+    ]
+  },
+
+  {
+    "name": "Pinturas Modernas",
+    "category": "Pintores",
+    "description": "Pintura residencial y comercial.",
+    "location": "San Cristóbal",
+    "phone": "809-000-0005",
+    "whatsapp": "18090000005",
+    "rating": "4.6",
+    "image": "https://imgur.com/BHNLMOx.jpg",
     "gallery": [
       "https://imgur.com/1JtWLu8.jpg",
       "https://imgur.com/tXaocxd.jpg",
-      "https://imgur.com/swaeb9M.jpg",
-      "https://imgur.com/tXaocxd.jpg"
+      "https://imgur.com/swaeb9M.jpg"
+    ]
+  },
+
+  {
+    "name": "Handyman RD",
+    "category": "Handyman",
+    "description": "Reparaciones generales para el hogar.",
+    "location": "Santo Domingo Norte",
+    "phone": "809-000-0006",
+    "whatsapp": "18090000006",
+    "rating": "4.9",
+    "image": "https://imgur.com/tXaocxd.jpg",
+    "gallery": [
+      "https://imgur.com/BHNLMOx.jpg",
+      "https://imgur.com/1JtWLu8.jpg",
+      "https://imgur.com/swaeb9M.jpg"
+    ]
+  },
+
+  {
+    "name": "Limpieza Total",
+    "category": "Limpieza",
+    "description": "Servicios de limpieza profunda para hogares y oficinas.",
+    "location": "Punta Cana",
+    "phone": "809-000-0007",
+    "whatsapp": "18090000007",
+    "rating": "4.8",
+    "image": "https://imgur.com/swaeb9M.jpg",
+    "gallery": [
+      "https://imgur.com/BHNLMOx.jpg",
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/1JtWLu8.jpg"
+    ]
+  },
+
+  {
+    "name": "Cámaras Seguras RD",
+    "category": "Instalación de cámaras",
+    "description": "Instalación de cámaras de seguridad y DVR.",
+    "location": "Santo Domingo Oeste",
+    "phone": "809-000-0008",
+    "whatsapp": "18090000008",
+    "rating": "5.0",
+    "image": "https://imgur.com/1JtWLu8.jpg",
+    "gallery": [
+      "https://imgur.com/BHNLMOx.jpg",
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/swaeb9M.jpg"
+    ]
+  },
+
+  {
+    "name": "ElectroFix RD",
+    "category": "Reparación de electrodomésticos",
+    "description": "Reparación de neveras, lavadoras y estufas.",
+    "location": "Baní",
+    "phone": "809-000-0009",
+    "whatsapp": "18090000009",
+    "rating": "4.7",
+    "image": "https://imgur.com/BHNLMOx.jpg",
+    "gallery": [
+      "https://imgur.com/1JtWLu8.jpg",
+      "https://imgur.com/tXaocxd.jpg",
+      "https://imgur.com/swaeb9M.jpg"
     ]
   }
-
-
-  
 ]
-
