@@ -8,6 +8,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 let MOVIES = [];
 
+function isSpanish(title) {
+    const t = title;
+    // Tier 1: accented Spanish characters or ñ
+    if (/[áéíóúüñÁÉÍÓÚÜÑ¿¡]/.test(t)) return true;
+    // Tier 2: unambiguous Spanish words (word boundaries)
+    if (/\b(los|las|del|una|que|por|sobre|entre|cuando|también|hay|pero|nunca|siempre|aquí|allí|ahora|después|antes|grande|pequeño|negro|blanco|rojo|azul|verde|amor|vida|muerte|noche|hombre|mujer|mundo|tierra|cielo|fuego|agua|corazón|hermano|hermana|padre|madre|hijo|hija|señor|señora|diablo|ángel|alma|fantasma|maldito|maldita|perdido|perdida|salvaje|bella|bello|secreto|verdad|sangre|ciudad|guerra|venganza|traición|familia|viaje|regreso|ladrón|detective|policía|capitán|soldado|general|navidad|fiesta|loco|loca|sueño|miedo|peligro|fuerza|poder|silencio|oscuro|oscura|eterno|eterna|primero|primera|último|última)\b/i.test(t)) return true;
+    // Tier 3: starts with clear Spanish articles/prepositions
+    if (/^(el|la|lo|los|las|un|una|en|al)\s/i.test(t)) return true;
+    return false;
+}
+
 function classifyGenre(title) {
     const t = title.toLowerCase();
     const has = (...words) => words.some(w => t.includes(w));
@@ -121,7 +132,7 @@ try {
     const data = JSON.parse(fs.readFileSync(path.join(__dirname, process.env.DATA_FILE || 'data.json'), 'utf8'));
     MOVIES = data.map((m, i) => {
         const title = m.title || 'Sin título';
-        return { id: i, title, poster: m.logo || '', url: m.url || '', genre: classifyGenre(title) };
+        return { id: i, title, poster: m.logo || '', url: m.url || '', genre: classifyGenre(title), spanish: isSpanish(title) };
     });
     const counts = {};
     MOVIES.forEach(m => { counts[m.genre] = (counts[m.genre] || 0) + 1; });
@@ -182,10 +193,10 @@ app.get('/api/translate', async (req, res) => {
     res.json({ translations: results });
 });
 
-const GENRE_ORDER = ['Todas','Acción','Terror','Comedia','Drama','Anime','Ciencia Ficción','Romance','Thriller','Fantasía','Animación','Documental','Otros'];
+const GENRE_ORDER = ['Todas','Español','Acción','Terror','Comedia','Drama','Anime','Ciencia Ficción','Romance','Thriller','Fantasía','Animación','Documental','Otros'];
 
 app.get('/api/genres', (req, res) => {
-    const counts = { 'Todas': MOVIES.length };
+    const counts = { 'Todas': MOVIES.length, 'Español': MOVIES.filter(m => m.spanish).length };
     MOVIES.forEach(m => { counts[m.genre] = (counts[m.genre] || 0) + 1; });
     const genres = GENRE_ORDER.filter(g => counts[g] > 0).map(g => ({ name: g, count: counts[g] || 0 }));
     res.json(genres);
@@ -195,7 +206,10 @@ app.get('/api/movies', (req, res) => {
     const { page = 0, limit = 200, q = '', random, genre = '' } = req.query;
     let list = [...MOVIES];
     if (q) list = list.filter(m => m.title.toLowerCase().includes(q.toLowerCase()));
-    if (genre && genre !== 'Todas') list = list.filter(m => m.genre === genre);
+    if (genre && genre !== 'Todas') {
+        if (genre === 'Español') list = list.filter(m => m.spanish);
+        else list = list.filter(m => m.genre === genre);
+    }
     if (random === 'true') list.sort(() => Math.random() - 0.5);
     const start = page * limit;
     res.json({ total: list.length, hasMore: start + +limit < list.length, data: list.slice(start, start + +limit) });
