@@ -286,6 +286,8 @@ video{flex:1;width:100%;background:#000}
 .genre-pill{flex-shrink:0;background:var(--c);border:2px solid var(--b);color:var(--t2);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap}
 .genre-pill:hover{border-color:var(--p);color:var(--t)}
 .genre-pill.active{background:var(--p);color:#000;border-color:var(--p)}
+.genre-pill.f{border-color:var(--p);color:var(--t);box-shadow:0 0 0 2px rgba(245,197,24,.4);transform:scale(1.05)}
+.genre-pill.active.f{box-shadow:0 0 0 3px rgba(245,197,24,.6)}
 .genre-pill .cnt{opacity:0.7;font-size:10px;margin-left:4px}
 </style></head><body><div id="app">
 <div class="hdr">
@@ -325,6 +327,7 @@ const S={
     imgObserver:null, gridCols:0, currentIndex:-1,
     headerElements:[],
     headerIndex:0,
+    genreIndex:-1,
     lang:'es',
     translating:false,
     genre:'Todas'
@@ -570,23 +573,64 @@ function calculateGridColumns() {
     S.gridCols = Math.max(1, cols);
 }
 
+// ===== NAVEGACIÓN BARRA DE GÉNEROS =====
+function getGenrePills() {
+    return [...el.genreBar.querySelectorAll('.genre-pill')];
+}
+
+function setFocusGenre(index) {
+    const pills = getGenrePills();
+    if (!pills.length) { setFocusGrid(0); return; }
+    if (index < 0) index = 0;
+    if (index >= pills.length) index = pills.length - 1;
+
+    if (S.focus && S.focus.classList) S.focus.classList.remove('f');
+
+    S.genreIndex = index;
+    S.headerIndex = -1;
+    S.currentIndex = -1;
+    S.focus = pills[index];
+    pills[index].classList.add('f');
+    el.srch.blur();
+
+    // Scroll pill into view dentro de la barra
+    pills[index].scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+}
+
+function navigateGenre(direction) {
+    const pills = getGenrePills();
+    switch (direction) {
+        case 'left':
+            if (S.genreIndex > 0) { setFocusGenre(S.genreIndex - 1); return true; }
+            return false;
+        case 'right':
+            if (S.genreIndex < pills.length - 1) { setFocusGenre(S.genreIndex + 1); return true; }
+            return false;
+        case 'up':
+            setFocusHeader(S.headerElements.length - 1); // ir al último elemento del header (lang)
+            return true;
+        case 'down':
+            const cards = getCards();
+            if (cards.length > 0) { setFocusGrid(0); return true; }
+            return false;
+    }
+    return false;
+}
+
 // ===== MANEJO DE FOCUS =====
 function setFocusHeader(index) {
     if(index < 0) index = 0;
     if(index >= S.headerElements.length) index = S.headerElements.length - 1;
 
-    // Remover focus anterior
     if(S.focus && S.focus.classList) S.focus.classList.remove('f');
 
-    // Actualizar estado
     S.headerIndex = index;
     S.focus = S.headerElements[index];
-    S.currentIndex = -1; // Resetear índice de grid
+    S.currentIndex = -1;
+    S.genreIndex = -1;
 
-    // Aplicar focus
     S.focus.classList.add('f');
 
-    // Focus nativo para input
     if(S.focus === el.srch) {
         el.srch.focus();
     } else {
@@ -599,13 +643,12 @@ function setFocusGrid(index) {
     if(index < 0) index = 0;
     if(index >= cards.length) index = cards.length - 1;
 
-    // Remover focus anterior
     if(S.focus && S.focus.classList) S.focus.classList.remove('f');
 
-    // Actualizar estado
     S.currentIndex = index;
     S.focus = cards[index];
-    S.headerIndex = -1; // Resetear índice de header
+    S.headerIndex = -1;
+    S.genreIndex = -1;
 
     // Aplicar focus
     cards[index].classList.add('f');
@@ -632,8 +675,15 @@ function navigateGrid(direction) {
     switch(direction) {
         case 'up':
             if(S.currentIndex < S.gridCols) {
-                // Ir al header (botón mix)
-                setFocusHeader(2);
+                // Ir a la barra de géneros
+                const pills = getGenrePills();
+                if (pills.length) {
+                    // Buscar la pill activa o la primera
+                    const activeIdx = pills.findIndex(p => p.classList.contains('active'));
+                    setFocusGenre(activeIdx >= 0 ? activeIdx : 0);
+                } else {
+                    setFocusHeader(2);
+                }
                 return true;
             }
             newIndex = Math.max(0, S.currentIndex - S.gridCols);
@@ -677,15 +727,17 @@ function navigateHeader(direction) {
             newIndex = Math.min(S.headerElements.length - 1, S.headerIndex + 1);
             break;
         case 'down':
-            // Ir a la primera card del grid
-            const cards = getCards();
-            if(cards.length > 0) {
-                setFocusGrid(0);
+            // Ir a la barra de géneros primero
+            const pills = getGenrePills();
+            if (pills.length) {
+                const activeIdx = pills.findIndex(p => p.classList.contains('active'));
+                setFocusGenre(activeIdx >= 0 ? activeIdx : 0);
                 return true;
             }
+            const cards = getCards();
+            if(cards.length > 0) { setFocusGrid(0); return true; }
             break;
         case 'up':
-            // No hay nada arriba del header
             return false;
     }
 
@@ -729,19 +781,17 @@ document.onkeydown = e => {
 };
 
 function nav(k) {
-    // Activar elemento seleccionado
     if(k === 'Enter' || k === ' ') {
         if(S.focus === el.logo) {
-            // Recargar página
             location.reload();
         } else if(S.focus === el.srch) {
             el.srch.focus();
-            // Si hay texto, ejecutar búsqueda
-            if(el.srch.value.trim()) {
-                loadMovies(false);
-            }
+            if(el.srch.value.trim()) loadMovies(false);
         } else if(S.focus === el.mix) {
             loadMovies(true);
+        } else if(S.genreIndex >= 0 && S.focus && S.focus.classList.contains('genre-pill')) {
+            // Activar género seleccionado
+            S.focus.click();
         } else if(S.focus && S.focus.classList.contains('card')) {
             const idx = [...el.grid.querySelectorAll('.card')].indexOf(S.focus);
             if(idx >= 0 && S.movies[idx]) play(S.movies[idx]);
@@ -749,51 +799,60 @@ function nav(k) {
         return;
     }
 
-    // Escape para limpiar búsqueda
     if(k === 'Escape') {
         if(el.srch.value.trim()) {
             el.srch.value = '';
             loadMovies(false);
         } else if(S.currentIndex >= 0) {
-            // Si estamos en el grid, ir al header
-            setFocusHeader(2); // Ir al botón mix
+            // Grid → género bar
+            const pills = getGenrePills();
+            if (pills.length) {
+                const activeIdx = pills.findIndex(p => p.classList.contains('active'));
+                setFocusGenre(activeIdx >= 0 ? activeIdx : 0);
+            } else {
+                setFocusHeader(2);
+            }
+        } else if(S.genreIndex >= 0) {
+            // Género bar → header
+            setFocusHeader(S.headerElements.length - 1);
         }
         return;
     }
 
-    // Backspace
     if(k === 'Backspace') {
         if(S.focus === el.srch && el.srch.value.length > 0) {
-            // Permitir borrar en el input
             return;
         } else if(S.currentIndex >= 0) {
-            // Si estamos en el grid, ir al header
-            setFocusHeader(2);
+            // Grid → género bar
+            const pills = getGenrePills();
+            if (pills.length) {
+                const activeIdx = pills.findIndex(p => p.classList.contains('active'));
+                setFocusGenre(activeIdx >= 0 ? activeIdx : 0);
+            } else {
+                setFocusHeader(2);
+            }
+        } else if(S.genreIndex >= 0) {
+            // Género bar → header
+            setFocusHeader(S.headerElements.length - 1);
         }
         return;
     }
 
-    // Navegación con flechas
     if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) {
         const direction = k.toLowerCase().replace('arrow', '');
 
         if(S.currentIndex >= 0) {
-            // Estamos en el grid
             if(!navigateGrid(direction) && direction === 'right') {
-                // Si no se pudo navegar en el grid y es derecha, ir al header
                 setFocusHeader(0);
             }
+        } else if(S.genreIndex >= 0) {
+            navigateGenre(direction);
         } else if(S.headerIndex >= 0) {
-            // Estamos en el header
             if(!navigateHeader(direction) && direction === 'left' && S.headerIndex === 0) {
-                // Si estamos en el logo y vamos a la izquierda, loop al final del grid
                 const cards = getCards();
-                if(cards.length > 0) {
-                    setFocusGrid(cards.length - 1);
-                }
+                if(cards.length > 0) setFocusGrid(cards.length - 1);
             }
         } else {
-            // Sin focus, empezar en el header
             setFocusHeader(0);
         }
     }
