@@ -243,7 +243,10 @@ app.get('/video-proxy', (req, res) => {
 
 app.get('/', (req, res) => res.send(`<!DOCTYPE html><html lang="es"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Movies+</title><style>
+<title>Movies+</title>
+<link rel="preconnect" href="https://image.tmdb.org" crossorigin>
+<link rel="dns-prefetch" href="https://image.tmdb.org">
+<style>
 *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
 :root{--p:#f5c518;--bg:#0a0a0a;--s:#161616;--c:#1a1a1a;--b:#2a2a2a;--t:#e0e0e0;--t2:#888}
 html,body{background:var(--bg);color:var(--t);font-family:system-ui,sans-serif;height:100%;overflow:hidden}
@@ -498,32 +501,31 @@ function initLazyLoading() {
             }
         });
     }, {
-        rootMargin: '300px 0px', // Cargar antes de que entren al viewport
-        threshold: 0.01
+        rootMargin: '600px 0px',
+        threshold: 0
     });
 
-    // Observar todas las imágenes
-    document.querySelectorAll('.card img[data-src]').forEach(img => {
-        S.imgObserver.observe(img);
+    // Observar todas las imágenes; las primeras 20 se cargan inmediatamente
+    document.querySelectorAll('.card img[data-src]').forEach((img, idx) => {
+        if (idx < 20) loadImageWithAnimation(img);
+        else S.imgObserver.observe(img);
     });
 }
 
 function loadImageWithAnimation(img) {
-    if(!img.dataset.src) return;
+    if(!img.dataset.src || img.classList.contains('loaded')) return;
 
     const src = img.dataset.src;
-    const imgEl = new Image();
+    delete img.dataset.src; // evitar cargas duplicadas
 
-    imgEl.onload = () => {
-        img.src = src;
-        // Forzar reflow para activar la animación
-        void img.offsetWidth;
+    img.decoding = 'async';
+
+    img.onload = () => {
         img.classList.add('loaded');
         img.style.background = 'none';
     };
 
-    imgEl.onerror = () => {
-        // Usar placeholder SVG con animación
+    img.onerror = () => {
         img.src = 'data:image/svg+xml;base64,' + btoa(
             '<svg xmlns="http://www.w3.org/2000/svg" width="130" height="195" viewBox="0 0 130 195">' +
             '<rect width="130" height="195" fill="#1a1a1a"/>' +
@@ -534,10 +536,7 @@ function loadImageWithAnimation(img) {
         img.style.background = 'none';
     };
 
-    // Pequeño delay para mostrar la animación de carga
-    setTimeout(() => {
-        imgEl.src = src;
-    }, 100);
+    img.src = src; // sin delay — carga inmediata
 }
 
 function preloadAdjacentImages(index) {
@@ -691,18 +690,14 @@ function loadMovies(random) {
             S.movies = d.data;
             el.stats.textContent = UI_STRINGS[S.lang].movies_label(d.total);
 
-            d.data.forEach((m, i) => {
-                setTimeout(() => {
-                    el.grid.appendChild(mkCard(m));
-                }, i * 10);
-            });
+            const frag = document.createDocumentFragment();
+            d.data.forEach(m => frag.appendChild(mkCard(m)));
+            el.grid.appendChild(frag);
 
-            setTimeout(() => {
-                calcCols();
-                initLazyLoading();
-                focusFirst();
-                if (S.lang === 'en') translateCards('en');
-            }, 100);
+            calcCols();
+            initLazyLoading();
+            focusFirst();
+            if (S.lang === 'en') translateCards('en');
         })
         .catch(() => {
             el.grid.innerHTML = '<div class="msg">' + UI_STRINGS[S.lang].error_load + '</div>';
@@ -719,7 +714,7 @@ function mkCard(m) {
     const posterSrc = m.poster || '';
     const displayTitle = S.lang === 'en' && titleCache.has(m.title) && titleCache.get(m.title).en
         ? titleCache.get(m.title).en : m.title;
-    d.innerHTML = '<img data-src="' + esc(posterSrc) + '" alt="' + esc(m.title) + '">' +
+    d.innerHTML = '<img data-src="' + esc(posterSrc) + '" alt="' + esc(m.title) + '" decoding="async" loading="lazy">' +
                   '<div class="card-t">' + esc(displayTitle) + '</div>';
 
     d.onclick = () => {
