@@ -323,14 +323,11 @@ const el={
 };
 
 const S={
-    view:'home', movies:[], focus:null, lastFocus:null, playing:false, retry:0,
-    imgObserver:null, gridCols:0, currentIndex:-1,
-    headerElements:[],
-    headerIndex:0,
-    genreIndex:-1,
-    lang:'es',
-    translating:false,
-    genre:'Todas'
+    view:'home', movies:[],
+    focused:null, lastFocused:null,
+    playing:false, retry:0,
+    imgObserver:null, cols:5,
+    lang:'es', translating:false, genre:'Todas'
 };
 
 // ===== TRADUCCIÓN =====
@@ -429,7 +426,6 @@ async function toggleLang() {
 }
 
 el.lang.onclick = toggleLang;
-el.lang.addEventListener('focus', () => setFocusHeader(3));
 
 // ===== INICIALIZACIÓN =====
 history.replaceState({v:'home'},'','#home');
@@ -457,7 +453,6 @@ function loadGenres() {
 }
 
 function init() {
-    S.headerElements = [el.logo, el.srch, el.mix, el.lang];
     loadGenres();
 
     fetch('/api/movies?limit=200&random=true').then(r=>r.json()).then(d=>{
@@ -467,9 +462,9 @@ function init() {
         S.movies=d.data;
         d.data.forEach(m=>el.grid.appendChild(mkCard(m)));
 
-        calculateGridColumns();
+        calcCols();
         initLazyLoading();
-        setFocusHeader(0);
+        setTimeout(focusFirst, 300);
 
     }).catch(()=>el.grid.innerHTML='<div class="msg">Error</div>');
 }
@@ -532,7 +527,7 @@ function loadImageWithAnimation(img) {
 }
 
 function preloadAdjacentImages(index) {
-    const cards = getCards();
+    const cards = [...el.grid.querySelectorAll('.card')];
     if(!cards.length) return;
 
     // Cargar imágenes en un radio de 2 elementos
@@ -544,326 +539,121 @@ function preloadAdjacentImages(index) {
     }
 }
 
-// ===== SISTEMA DE NAVEGACIÓN UNIFICADO =====
-function getCards() {
-    return [...el.grid.querySelectorAll('.card')];
+// ===== NAVEGACIÓN UNIFICADA (TV remote) =====
+function getFocusable() {
+    return [...document.querySelectorAll('#logo, #srch, #mix, #lang, .genre-pill, .card')]
+        .filter(e => e.offsetParent !== null);
 }
 
-function calculateGridColumns() {
-    const grid = el.grid;
-    if(!grid.children.length) {
-        S.gridCols = 0;
-        return;
+function focus(elem) {
+    if (S.focused) S.focused.classList.remove('f');
+    S.focused = elem;
+    if (!elem) return;
+    elem.classList.add('f');
+    elem.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (elem !== el.srch) el.srch.blur();
+    if (elem.classList.contains('card')) {
+        const cards = [...el.grid.querySelectorAll('.card')];
+        const idx = cards.indexOf(elem);
+        if (idx >= 0) preloadAdjacentImages(idx);
     }
+}
 
-    // Método simple: contar elementos en la primera fila
-    const firstCard = grid.children[0];
-    const firstRect = firstCard.getBoundingClientRect();
-    let cols = 1;
+function focusFirst() {
+    const f = getFocusable();
+    if (S.lastFocused && f.includes(S.lastFocused)) { focus(S.lastFocused); return; }
+    const card = f.find(e => e.classList.contains('card'));
+    focus(card || f[0]);
+}
 
-    for(let i = 1; i < grid.children.length; i++) {
-        const rect = grid.children[i].getBoundingClientRect();
-        if(Math.abs(rect.top - firstRect.top) < 10) {
-            cols++;
-        } else {
-            break;
+function saveFocus() { S.lastFocused = S.focused; }
+
+function calcCols() {
+    const c = el.grid.querySelector('.card');
+    if (c) S.cols = Math.max(1, Math.floor(el.grid.offsetWidth / (c.offsetWidth + 8)));
+}
+
+function move(dir) {
+    const f = getFocusable();
+    if (f.indexOf(S.focused) < 0) { focusFirst(); return; }
+
+    const cards = f.filter(e => e.classList.contains('card'));
+    const pills = f.filter(e => e.classList.contains('genre-pill'));
+    const hdr   = f.filter(e => ['logo','srch','mix','lang'].includes(e.id));
+
+    const ci = cards.indexOf(S.focused);
+    const pi = pills.indexOf(S.focused);
+    const hi = hdr.indexOf(S.focused);
+
+    if (ci >= 0) {
+        if (dir === 'up') {
+            if (ci < S.cols) {
+                const ap = pills.find(p => p.classList.contains('active')) || pills[0];
+                focus(ap || hdr[hdr.length - 1] || hdr[0]);
+            } else { focus(cards[ci - S.cols]); }
+        }
+        if (dir === 'down' && ci + S.cols < cards.length) focus(cards[ci + S.cols]);
+        if (dir === 'left'  && ci > 0) focus(cards[ci - 1]);
+        if (dir === 'right' && ci < cards.length - 1) focus(cards[ci + 1]);
+    } else if (pi >= 0) {
+        if (dir === 'up')   focus(hdr[hdr.length - 1] || hdr[0]);
+        if (dir === 'down' && cards.length) focus(cards[0]);
+        if (dir === 'left')  { pi > 0 ? focus(pills[pi - 1]) : focus(hdr[hdr.length - 1] || hdr[0]); }
+        if (dir === 'right' && pi < pills.length - 1) focus(pills[pi + 1]);
+    } else if (hi >= 0) {
+        if (dir === 'left'  && hi > 0) focus(hdr[hi - 1]);
+        if (dir === 'right' && hi < hdr.length - 1) focus(hdr[hi + 1]);
+        if (dir === 'down') {
+            const ap = pills.find(p => p.classList.contains('active')) || pills[0];
+            focus(ap || (cards.length ? cards[0] : null));
         }
     }
-
-    S.gridCols = Math.max(1, cols);
 }
 
-// ===== NAVEGACIÓN BARRA DE GÉNEROS =====
-function getGenrePills() {
-    return [...el.genreBar.querySelectorAll('.genre-pill')];
+function activate() {
+    if (!S.focused) return;
+    if (S.focused === el.srch) { el.srch.focus(); return; }
+    S.focused.click();
 }
 
-function setFocusGenre(index) {
-    const pills = getGenrePills();
-    if (!pills.length) { setFocusGrid(0); return; }
-    if (index < 0) index = 0;
-    if (index >= pills.length) index = pills.length - 1;
-
-    if (S.focus && S.focus.classList) S.focus.classList.remove('f');
-
-    S.genreIndex = index;
-    S.headerIndex = -1;
-    S.currentIndex = -1;
-    S.focus = pills[index];
-    pills[index].classList.add('f');
-    el.srch.blur();
-
-    // Scroll pill into view dentro de la barra
-    pills[index].scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-}
-
-function navigateGenre(direction) {
-    const pills = getGenrePills();
-    switch (direction) {
-        case 'left':
-            if (S.genreIndex > 0) { setFocusGenre(S.genreIndex - 1); return true; }
-            return false;
-        case 'right':
-            if (S.genreIndex < pills.length - 1) { setFocusGenre(S.genreIndex + 1); return true; }
-            return false;
-        case 'up':
-            setFocusHeader(S.headerElements.length - 1); // ir al último elemento del header (lang)
-            return true;
-        case 'down':
-            const cards = getCards();
-            if (cards.length > 0) { setFocusGrid(0); return true; }
-            return false;
-    }
-    return false;
-}
-
-// ===== MANEJO DE FOCUS =====
-function setFocusHeader(index) {
-    if(index < 0) index = 0;
-    if(index >= S.headerElements.length) index = S.headerElements.length - 1;
-
-    if(S.focus && S.focus.classList) S.focus.classList.remove('f');
-
-    S.headerIndex = index;
-    S.focus = S.headerElements[index];
-    S.currentIndex = -1;
-    S.genreIndex = -1;
-
-    S.focus.classList.add('f');
-
-    if(S.focus === el.srch) {
-        el.srch.focus();
-    } else {
-        el.srch.blur();
-    }
-}
-
-function setFocusGrid(index) {
-    const cards = getCards();
-    if(index < 0) index = 0;
-    if(index >= cards.length) index = cards.length - 1;
-
-    if(S.focus && S.focus.classList) S.focus.classList.remove('f');
-
-    S.currentIndex = index;
-    S.focus = cards[index];
-    S.headerIndex = -1;
-    S.genreIndex = -1;
-
-    // Aplicar focus
-    cards[index].classList.add('f');
-
-    // Scroll suave
-    const card = cards[index];
-    const mainRect = el.main.getBoundingClientRect();
-    const cardRect = card.getBoundingClientRect();
-
-    if(cardRect.top < mainRect.top || cardRect.bottom > mainRect.bottom) {
-        card.scrollIntoView({block: 'nearest', behavior: 'smooth'});
-    }
-
-    // Pre-cargar imágenes adyacentes
-    preloadAdjacentImages(index);
-}
-
-function navigateGrid(direction) {
-    const cards = getCards();
-    if(!cards.length) return false;
-
-    let newIndex = S.currentIndex;
-
-    switch(direction) {
-        case 'up':
-            if(S.currentIndex < S.gridCols) {
-                // Ir a la barra de géneros
-                const pills = getGenrePills();
-                if (pills.length) {
-                    // Buscar la pill activa o la primera
-                    const activeIdx = pills.findIndex(p => p.classList.contains('active'));
-                    setFocusGenre(activeIdx >= 0 ? activeIdx : 0);
-                } else {
-                    setFocusHeader(2);
-                }
-                return true;
-            }
-            newIndex = Math.max(0, S.currentIndex - S.gridCols);
-            break;
-        case 'down':
-            newIndex = Math.min(cards.length - 1, S.currentIndex + S.gridCols);
-            break;
-        case 'left':
-            if(S.currentIndex % S.gridCols === 0) {
-                // Primera columna, ir al header (search)
-                setFocusHeader(1);
-                return true;
-            }
-            newIndex = Math.max(0, S.currentIndex - 1);
-            break;
-        case 'right':
-            if((S.currentIndex + 1) % S.gridCols === 0 || S.currentIndex === cards.length - 1) {
-                // Última columna, no hacer nada o loop
-                return false;
-            }
-            newIndex = Math.min(cards.length - 1, S.currentIndex + 1);
-            break;
-    }
-
-    if(newIndex !== S.currentIndex) {
-        setFocusGrid(newIndex);
-        return true;
-    }
-
-    return false;
-}
-
-function navigateHeader(direction) {
-    let newIndex = S.headerIndex;
-
-    switch(direction) {
-        case 'left':
-            newIndex = Math.max(0, S.headerIndex - 1);
-            break;
-        case 'right':
-            newIndex = Math.min(S.headerElements.length - 1, S.headerIndex + 1);
-            break;
-        case 'down':
-            // Ir a la barra de géneros primero
-            const pills = getGenrePills();
-            if (pills.length) {
-                const activeIdx = pills.findIndex(p => p.classList.contains('active'));
-                setFocusGenre(activeIdx >= 0 ? activeIdx : 0);
-                return true;
-            }
-            const cards = getCards();
-            if(cards.length > 0) { setFocusGrid(0); return true; }
-            break;
-        case 'up':
-            return false;
-    }
-
-    if(newIndex !== S.headerIndex) {
-        setFocusHeader(newIndex);
-        return true;
-    }
-
-    return false;
-}
-
-// ===== MANEJO DE TECLADO =====
-document.onkeydown = e => {
+document.addEventListener('keydown', e => {
     const k = e.key;
-
-    // Prevenir comportamiento por defecto para teclas de navegación
-    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' ','Escape','Backspace','Tab'].includes(k)){
-        e.preventDefault();
-        e.stopPropagation();
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' ','Escape','Backspace','Tab'].includes(k)) {
+        e.preventDefault(); e.stopPropagation();
     }
+    if (S.view === 'player') { playerKey(k); return; }
 
-    if(S.view === 'player'){
-        playerKey(k);
-        return;
-    }
-
-    // Evitar que Tab cambie el focus
-    if(k === 'Tab') {
-        e.preventDefault();
-        if(S.focus === el.srch) {
-            // Si estamos en search, ir al siguiente elemento del header
-            navigateHeader('right');
-        } else {
-            // Por defecto, ir al primer elemento del header
-            setFocusHeader(0);
+    if (document.activeElement === el.srch) {
+        if (k === 'ArrowDown') {
+            el.srch.blur();
+            const ap = document.querySelector('.genre-pill.active') || document.querySelector('.genre-pill');
+            if (ap) focus(ap); else focusFirst();
         }
+        if (k === 'Escape') { el.srch.value = ''; loadMovies(false); }
         return;
     }
 
-    nav(k);
-};
-
-function nav(k) {
-    if(k === 'Enter' || k === ' ') {
-        if(S.focus === el.logo) {
-            location.reload();
-        } else if(S.focus === el.srch) {
-            el.srch.focus();
-            if(el.srch.value.trim()) loadMovies(false);
-        } else if(S.focus === el.mix) {
-            loadMovies(true);
-        } else if(S.genreIndex >= 0 && S.focus && S.focus.classList.contains('genre-pill')) {
-            // Activar género seleccionado
-            S.focus.click();
-        } else if(S.focus && S.focus.classList.contains('card')) {
-            const idx = [...el.grid.querySelectorAll('.card')].indexOf(S.focus);
-            if(idx >= 0 && S.movies[idx]) play(S.movies[idx]);
-        }
-        return;
-    }
-
-    if(k === 'Escape') {
-        if(el.srch.value.trim()) {
-            el.srch.value = '';
-            loadMovies(false);
-        } else if(S.currentIndex >= 0) {
-            // Grid → género bar
-            const pills = getGenrePills();
-            if (pills.length) {
-                const activeIdx = pills.findIndex(p => p.classList.contains('active'));
-                setFocusGenre(activeIdx >= 0 ? activeIdx : 0);
-            } else {
-                setFocusHeader(2);
+    switch (k) {
+        case 'ArrowUp':    move('up');    break;
+        case 'ArrowDown':  move('down');  break;
+        case 'ArrowLeft':  move('left');  break;
+        case 'ArrowRight': move('right'); break;
+        case 'Enter': case ' ': activate(); break;
+        case 'Tab': S.focused === el.srch ? move('right') : focusFirst(); break;
+        case 'Escape':
+        case 'Backspace': {
+            const cur = S.focused;
+            if (cur && cur.classList.contains('card')) {
+                const ap = document.querySelector('.genre-pill.active') || document.querySelector('.genre-pill');
+                if (ap) focus(ap);
+            } else if (cur && cur.classList.contains('genre-pill')) {
+                focus(el.lang || el.mix);
             }
-        } else if(S.genreIndex >= 0) {
-            // Género bar → header
-            setFocusHeader(S.headerElements.length - 1);
-        }
-        return;
-    }
-
-    if(k === 'Backspace') {
-        if(S.focus === el.srch && el.srch.value.length > 0) {
-            return;
-        } else if(S.currentIndex >= 0) {
-            // Grid → género bar
-            const pills = getGenrePills();
-            if (pills.length) {
-                const activeIdx = pills.findIndex(p => p.classList.contains('active'));
-                setFocusGenre(activeIdx >= 0 ? activeIdx : 0);
-            } else {
-                setFocusHeader(2);
-            }
-        } else if(S.genreIndex >= 0) {
-            // Género bar → header
-            setFocusHeader(S.headerElements.length - 1);
-        }
-        return;
-    }
-
-    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) {
-        const direction = k.toLowerCase().replace('arrow', '');
-
-        if(S.currentIndex >= 0) {
-            if(!navigateGrid(direction) && direction === 'right') {
-                setFocusHeader(0);
-            }
-        } else if(S.genreIndex >= 0) {
-            navigateGenre(direction);
-        } else if(S.headerIndex >= 0) {
-            if(!navigateHeader(direction) && direction === 'left' && S.headerIndex === 0) {
-                const cards = getCards();
-                if(cards.length > 0) setFocusGrid(cards.length - 1);
-            }
-        } else {
-            setFocusHeader(0);
+            break;
         }
     }
-}
+}, true);
 
-// Eventos de focus para elementos del header
-el.logo.addEventListener('focus', () => setFocusHeader(0));
-el.srch.addEventListener('focus', () => setFocusHeader(1));
-el.mix.addEventListener('focus', () => setFocusHeader(2));
-
-// Clic en logo para recargar
 el.logo.addEventListener('click', () => location.reload());
 
 // ===== BÚSQUEDA Y CARGA DE PELÍCULAS =====
@@ -885,7 +675,6 @@ function loadMovies(random) {
         .then(d => {
             el.grid.innerHTML = '';
             S.movies = d.data;
-            S.currentIndex = -1;
             el.stats.textContent = UI_STRINGS[S.lang].movies_label(d.total);
 
             d.data.forEach((m, i) => {
@@ -895,22 +684,15 @@ function loadMovies(random) {
             });
 
             setTimeout(() => {
-                calculateGridColumns();
+                calcCols();
                 initLazyLoading();
-
-                const cards = getCards();
-                if(cards.length > 0) {
-                    setFocusGrid(0);
-                } else {
-                    setFocusHeader(1);
-                }
-
+                focusFirst();
                 if (S.lang === 'en') translateCards('en');
             }, 100);
         })
         .catch(() => {
             el.grid.innerHTML = '<div class="msg">' + UI_STRINGS[S.lang].error_load + '</div>';
-            setFocusHeader(1);
+            focus(el.srch);
         });
 }
 
@@ -934,9 +716,9 @@ function mkCard(m) {
     return d;
 }
 
-// ===== REPRODUCTOR (sin cambios mayores) =====
+// ===== REPRODUCTOR =====
 function play(m) {
-    S.lastFocus = S.focus;
+    saveFocus();
     S.view = 'player';
     S.retry = 0;
     history.pushState({v:'player'},'','#player');
@@ -967,30 +749,7 @@ function closeP() {
     el.player.classList.remove('open');
     S.view = 'home';
 
-    setTimeout(() => {
-        // Restaurar focus a donde estaba
-        if(S.lastFocus && S.lastFocus.classList) {
-            if(S.lastFocus.classList.contains('card')) {
-                const cards = getCards();
-                const idx = cards.indexOf(S.lastFocus);
-                if(idx >= 0) {
-                    setFocusGrid(idx);
-                } else {
-                    setFocusHeader(0);
-                }
-            } else {
-                // Es un elemento del header
-                const idx = S.headerElements.indexOf(S.lastFocus);
-                if(idx >= 0) {
-                    setFocusHeader(idx);
-                } else {
-                    setFocusHeader(0);
-                }
-            }
-        } else {
-            setFocusHeader(0);
-        }
-    }, 50);
+    setTimeout(focusFirst, 50);
 }
 
 el.vid.onloadstart = () => {
@@ -1182,9 +941,7 @@ init();
 let resizeTimer;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-        calculateGridColumns();
-    }, 150);
+    resizeTimer = setTimeout(calcCols, 150);
 });
 })();
 </script></body></html>`));
