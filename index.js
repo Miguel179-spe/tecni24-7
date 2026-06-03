@@ -8,10 +8,124 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 let MOVIES = [];
 
+function classifyGenre(title) {
+    const t = title.toLowerCase();
+    const has = (...words) => words.some(w => t.includes(w));
+
+    if (has('naruto','dragon ball','one piece','bleach','attack on titan','demon slayer',
+            'my hero academia','sword art','jujutsu','fullmetal','hunter x hunter',
+            'fairy tail','death note','evangelion','pokemon','digimon','boku no',
+            'shingeki','boruto','tokyo ghoul','chainsaw man','spy x family','isekai',
+            'manga','shonen','seinen','hentai','ova ','ova:','anime','one punch',
+            'kimetsu','gintama','rezero','re:zero','konosuba','overlord','sao:',
+            'danmachi','steins','cowboy bebop','akira','ghost in the shell','spirited',
+            'howl','princess mononoke','my neighbor','totoro','your name','weathering'))
+        return 'Anime';
+
+    if (has('horror','terror','zombie','haunted','haunting','paranormal','exorcis',
+            'demon','devil','satan','cursed','curse','possession','possessed',
+            'nightmare','slasher','scream','fear','creep','scare','scarey','scary',
+            'witch','vampire','werewolf','monster','killer','murderer','psycho',
+            'sinister','malevolent','evil','occult','ritual','sacrifice','bloodbath',
+            'gore','undead','dead','resurrection','poltergeist','apparition',
+            'specter','revenant','dead house','deathly','dead by','the killing',
+            'blood moon','black mass'))
+        return 'Terror';
+
+    if (has('documentary','documental','nature','wildlife','biography','biopic',
+            'true story','real story','history of','historia de','national geographic',
+            'discovery','explore','expedition','investigation','investigacion',
+            'untold story','making of','behind the scenes','planeta','earth from',
+            'planet earth','attenborough','nonfiction','non-fiction','chronicle of'))
+        return 'Documental';
+
+    if (has('animation','animated','cartoon','pixar','dreamworks','studio ghibli',
+            'looney','disney','mickey','donald duck','3d animated','cgi film'))
+        return 'Animación';
+
+    if (has('sci-fi','science fiction','alien','ufo','spaceship','spacecraft',
+            'interstellar','intergalactic','galaxy','cosmos','nebula','mars','jupiter',
+            'quantum','android','cyborg','robot','artificial intelligence',' ai ',
+            'terminator','matrix','cyberpunk','dystopia','dystopian','clone','cloning',
+            'time travel','time machine','wormhole','parallel universe','multiverse',
+            'extraterrestrial','starship','star wars','star trek','prometheus',
+            'predator','avp','alien vs'))
+        return 'Ciencia Ficción';
+
+    if (has('comedy','comedia','funny','humor','humour','laugh','laughing',
+            'hilarious','roast','stand-up','standup','slapstick','parody','parodia',
+            'sitcom','mockumentary','rom-com','bromance','absurd comedy'))
+        return 'Comedia';
+
+    if (has(' war ',' guerra ',' wwii ','world war','vietnam war','civil war',
+            'battle of','battlefield','combat','soldier','soldiers','military',
+            'platoon','squadron','brigade','regiment','navy seal','delta force',
+            'marines','commando','sniper','raid','siege','assault','airstrike',
+            'trench','operation ','special forces','mercenary','mercenaries',
+            'guerrilla','warfare','warzone','insurgent','resistance fighter',
+            'front line','frontline','d-day','iwo jima','normandy'))
+        return 'Acción';
+
+    if (has('action','fight','fighting','kung fu','martial art','karate','judo',
+            'wushu','ninja','samurai','gladiator','boxer','boxing','mma','ufc',
+            'spy','espionage','agent ','secret agent','heist','getaway','chase',
+            'pursuit','mission impossible','007','james bond','bourne','hitman',
+            'assassin','mercenary','bounty','gunfight','shootout','explosion',
+            'car chase','avengers','superhero','super hero','batman','superman',
+            'spider-man','spiderman','iron man','captain america','thor ','hulk',
+            'x-men','guardians','justice league','wonder woman','black panther',
+            'fast and furious','john wick','die hard','rambo','terminator',
+            'transformers','godzilla','king kong','monster vs'))
+        return 'Acción';
+
+    if (has('romance','romantic','falling in love','love story','amor eterno',
+            'te amo','mi amor','wedding','boda','valentine','first love',
+            'second chance','love letter','sweetheart','beloved','crush','soulmate',
+            'my heart','tu corazon','corazón','novio','novia','boyfriend','girlfriend',
+            'marriage','casamiento','honeymoon','engagement','fiancé'))
+        return 'Romance';
+
+    if (has('love','amor ','amour') && !has('war','action','horror','terror'))
+        return 'Romance';
+
+    if (has('thriller','suspense','suspenseful','murder mystery','whodunit',
+            'detective','investigation','investigator','kidnap','abduct','missing',
+            'disappeared','disappear','conspiracy','cover-up','cover up','espionage',
+            'blackmail','interrogation','fugitive','on the run','manhunt',
+            'serial killer','profiler','criminal mind','dark secret','hidden truth'))
+        return 'Thriller';
+
+    if (has('mystery','enigma','unsolved','puzzle','clue','whodunit','cold case',
+            'crime scene','forensic','csi ','ncis ','evidence','witness'))
+        return 'Thriller';
+
+    if (has('fantasy','fantasia','magic','magical','wizard','witch','sorcerer',
+            'sorcery','dragon','dragons','kingdom','medieval','quest','prophecy',
+            'myth','mythology','mythical','legend','legendary','fairy','elf','elves',
+            'dwarf','orc','goblin','troll','enchanted','enchantment','realm',
+            'dungeon','swords','sword and','epic quest','chosen one','dark lord'))
+        return 'Fantasía';
+
+    if (has('drama','dramatic','tragedy','tragic','struggle','hardship','overcome',
+            'survivor','survival story','based on','inspired by','true events',
+            'coming of age','growing up','family drama','social drama','inner conflict',
+            'redemption','forgiveness','acceptance','identity','mental health',
+            'depression','addiction','recovery','abuse','domestic','betrayal',
+            'reconciliation','grief','mourning','loss of'))
+        return 'Drama';
+
+    return 'Otros';
+}
+
 try {
     const data = JSON.parse(fs.readFileSync(path.join(__dirname, process.env.DATA_FILE || 'data.json'), 'utf8'));
-    MOVIES = data.map((m, i) => ({ id: i, title: m.title || 'Sin título', poster: m.logo || '', url: m.url || '' }));
-    console.log(`✓ ${MOVIES.length} películas`);
+    MOVIES = data.map((m, i) => {
+        const title = m.title || 'Sin título';
+        return { id: i, title, poster: m.logo || '', url: m.url || '', genre: classifyGenre(title) };
+    });
+    const counts = {};
+    MOVIES.forEach(m => { counts[m.genre] = (counts[m.genre] || 0) + 1; });
+    console.log(`✓ ${MOVIES.length} películas | Géneros:`, counts);
 } catch (e) { console.error('Error:', e.message); }
 
 app.use((req, res, next) => {
@@ -68,9 +182,20 @@ app.get('/api/translate', async (req, res) => {
     res.json({ translations: results });
 });
 
+const GENRE_ORDER = ['Todas','Acción','Terror','Comedia','Drama','Anime','Ciencia Ficción','Romance','Thriller','Fantasía','Animación','Documental','Otros'];
+
+app.get('/api/genres', (req, res) => {
+    const counts = { 'Todas': MOVIES.length };
+    MOVIES.forEach(m => { counts[m.genre] = (counts[m.genre] || 0) + 1; });
+    const genres = GENRE_ORDER.filter(g => counts[g] > 0).map(g => ({ name: g, count: counts[g] || 0 }));
+    res.json(genres);
+});
+
 app.get('/api/movies', (req, res) => {
-    const { page = 0, limit = 200, q = '', random } = req.query;
-    let list = q ? MOVIES.filter(m => m.title.toLowerCase().includes(q.toLowerCase())) : [...MOVIES];
+    const { page = 0, limit = 200, q = '', random, genre = '' } = req.query;
+    let list = [...MOVIES];
+    if (q) list = list.filter(m => m.title.toLowerCase().includes(q.toLowerCase()));
+    if (genre && genre !== 'Todas') list = list.filter(m => m.genre === genre);
     if (random === 'true') list.sort(() => Math.random() - 0.5);
     const start = page * limit;
     res.json({ total: list.length, hasMore: start + +limit < list.length, data: list.slice(start, start + +limit) });
@@ -156,6 +281,12 @@ video{flex:1;width:100%;background:#000}
 .msg.load::after{content:'';display:block;width:20px;height:20px;margin:12px auto 0;border:2px solid #333;border-top-color:var(--p);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.genre-bar{display:flex;gap:6px;padding:8px 12px;background:var(--s);border-bottom:1px solid var(--b);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.genre-bar::-webkit-scrollbar{display:none}
+.genre-pill{flex-shrink:0;background:var(--c);border:2px solid var(--b);color:var(--t2);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.genre-pill:hover{border-color:var(--p);color:var(--t)}
+.genre-pill.active{background:var(--p);color:#000;border-color:var(--p)}
+.genre-pill .cnt{opacity:0.7;font-size:10px;margin-left:4px}
 </style></head><body><div id="app">
 <div class="hdr">
     <div class="logo f" id="logo">MOVIES+</div>
@@ -164,6 +295,7 @@ video{flex:1;width:100%;background:#000}
     <button class="lang-btn" id="lang" title="Cambiar idioma / Switch language">ES</button>
     <span class="stats" id="stats"></span>
 </div>
+<div class="genre-bar" id="genreBar"></div>
 <div class="main" id="main"><div class="grid" id="grid"><div class="msg load">Cargando</div></div></div>
 <div class="player" id="player">
 <video id="vid" playsinline webkit-playsinline></video>
@@ -181,7 +313,7 @@ video{flex:1;width:100%;background:#000}
 const $=id=>document.getElementById(id);
 const el={
     logo:$('logo'), grid:$('grid'), main:$('main'), srch:$('srch'), mix:$('mix'), stats:$('stats'),
-    lang:$('lang'),
+    lang:$('lang'), genreBar:$('genreBar'),
     player:$('player'), vid:$('vid'), pUi:$('pUi'), pTitle:$('pTitle'), pLoad:$('pLoad'), 
     pLoadTxt:$('pLoadTxt'), pErr:$('pErr'), pErrTxt:$('pErrTxt'), pInd:$('pInd'), pBar:$('pBar'), 
     pFill:$('pFill'), pBuf:$('pBuf'), pCur:$('pCur'), pDur:$('pDur'), pRw:$('pRw'), pPp:$('pPp'), 
@@ -194,7 +326,8 @@ const S={
     headerElements:[],
     headerIndex:0,
     lang:'es',
-    translating:false
+    translating:false,
+    genre:'Todas'
 };
 
 // ===== TRADUCCIÓN =====
@@ -299,8 +432,30 @@ el.lang.addEventListener('focus', () => setFocusHeader(3));
 history.replaceState({v:'home'},'','#home');
 window.onpopstate=()=>{if(S.view==='player'){closeP();history.pushState({v:'home'},'','#home')}};
 
+// ===== GÉNEROS =====
+function loadGenres() {
+    fetch('/api/genres').then(r=>r.json()).then(genres=>{
+        el.genreBar.innerHTML = '';
+        genres.forEach(g => {
+            const pill = document.createElement('button');
+            pill.className = 'genre-pill' + (g.name === S.genre ? ' active' : '');
+            pill.innerHTML = esc(g.name) + '<span class="cnt">(' + g.count + ')</span>';
+            pill.onclick = () => {
+                if (S.genre === g.name) return;
+                S.genre = g.name;
+                el.genreBar.querySelectorAll('.genre-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                el.srch.value = '';
+                loadMovies(false);
+            };
+            el.genreBar.appendChild(pill);
+        });
+    }).catch(() => {});
+}
+
 function init() {
     S.headerElements = [el.logo, el.srch, el.mix, el.lang];
+    loadGenres();
 
     fetch('/api/movies?limit=200&random=true').then(r=>r.json()).then(d=>{
         const s = UI_STRINGS[S.lang];
@@ -665,7 +820,8 @@ function loadMovies(random) {
     const s = UI_STRINGS[S.lang];
     el.grid.innerHTML = '<div class="msg load">' + s.loading + '</div>';
     const q = el.srch.value.trim();
-    fetch('/api/movies?limit=200' + (q ? '&q=' + encodeURIComponent(q) : '') + (random ? '&random=true' : ''))
+    const genreParam = S.genre && S.genre !== 'Todas' ? '&genre=' + encodeURIComponent(S.genre) : '';
+    fetch('/api/movies?limit=200' + (q ? '&q=' + encodeURIComponent(q) : '') + (random ? '&random=true' : '') + genreParam)
         .then(r => r.json())
         .then(d => {
             el.grid.innerHTML = '';
