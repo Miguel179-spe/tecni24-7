@@ -10,7 +10,227 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const config = { DATA_FILE: process.env.DATA_FILE || 'data.json' };
+const config = { DATA_FILE: process.env.DATA_FILE || 'movies.json' };
+
+// ===== CATEGORÍAS =====
+const CATEGORIES = [
+    'Acción',
+    'Adaptaciones de libros',
+    'Anime',
+    'Astrología',
+    'Cine de intriga',
+    'Clásicas',
+    'Cortos',
+    'De Hollywood',
+    'Deportes',
+    'Documentales',
+    'Dramas',
+    'En Español',
+    'Estados de ánimo',
+    'Fantasía',
+    'Fe y espiritualidad',
+    'Independientes',
+    'Internacionales',
+    'Latinoamericanas',
+    'Los favoritos de la crítica',
+    'Música y musicales',
+    'Orgullo',
+    'Para reír',
+    'Para ver en familia',
+    'Pelis policiales',
+    'Romances',
+    'Sci-fi',
+    'Terror'
+];
+
+const KEYWORDS = {
+    'Acción': [
+        'action','fight','battle','war','combat','mission','strike','assault','siege',
+        'agent','spy','heist','sniper','soldier','warrior','hunter','shooter','raid',
+        'force','fury','blaze','explosive','ambush','commando','operative','takeover',
+        'revenge','retaliation','attack','operation','invasion','resistance'
+    ],
+    'Adaptaciones de libros': [
+        'based on','from the novel','the book','chapter','volume','adaptation',
+        'chronicles','saga','trilogy','part','book one','book two','tales of'
+    ],
+    'Anime': [
+        'anime','manga','shonen','shojo','ghibli','gundam','dragon ball','naruto',
+        'one piece','bleach','attack on titan','fullmetal','pokemon','digimon',
+        'sailor moon','my hero','demon slayer','jujutsu','isekai','kimetsu','kawaii',
+        'samurai','ninja','shinobi','otaku','sensei','san ','chan ','kun '
+    ],
+    'Astrología': [
+        'astro','horoscope','zodiac','star sign','cosmos','celestial','lunar','solar',
+        'universe','galaxy','constellation','planetary','spiritual astro','tarot'
+    ],
+    'Cine de intriga': [
+        'thriller','mystery','suspense','conspiracy','secret','hidden','unknown',
+        'vanish','disappear','unsolved','who killed','the truth','beneath','dark secret',
+        'intriga','enigma','suspect','alibi','witness','evidence','clue','twist'
+    ],
+    'Clásicas': [
+        '(1920)','(1930)','(1940)','(1950)','(1960)','(1970)','(1980)',
+        'classic','golden age','vintage','retro','old hollywood','b&w','black and white',
+        'chaplin','hitchcock','wilder','ford ','capra'
+    ],
+    'Cortos': [
+        'short film','short:','corto','short ','mini film','animated short'
+    ],
+    'De Hollywood': [
+        'marvel','dc ','avengers','batman','superman','spider','iron man',
+        'disney','pixar','dreamworks','paramount','warner','universal','sony pictures',
+        'blockbuster','superhero','franchise','cinematic universe','the sequel'
+    ],
+    'Deportes': [
+        'sport','football','soccer','basketball','baseball','tennis','olympics',
+        'athlete','champion','championship','race','marathon','boxing','wrestling',
+        'ufc','wwe','elimination chamber','gold medal','world cup','tournament',
+        'league','coach','team','player','game day','match','bout','fight night',
+        'swim','golf','hockey','cycling','skating'
+    ],
+    'Documentales': [
+        'documentary','true story','real story','inside','untold','story of',
+        'history of','revealed','exposed','behind the scenes','making of',
+        'investigation','report','the truth about','chronicles of','life of',
+        'portrait of','in conversation','journey through'
+    ],
+    'Dramas': [
+        'drama','family drama','grief','loss','sorrow','tears','struggle','survive',
+        'redemption','forgiveness','broken','healing','journey','life','hope',
+        'faith','believe','overcome','second chance','fresh start','new beginning'
+    ],
+    'En Español': [],
+    'Estados de ánimo': [
+        'mood','feeling','emotion','soul','heart','mind','spirit','inner','peace',
+        'calm','zen','meditat','breathe','wellbeing','balance','harmony','anxiety',
+        'depression','joy','happiness','sadness','melancholy','nostalgia'
+    ],
+    'Fantasía': [
+        'fantasy','magic','wizard','witch','dragon','elf','dwarf','fairy','enchanted',
+        'kingdom','realm','quest','sword','sorcery','myth','legend','fable','tale',
+        'magical','spellbound','prophecy','chosen one','ancient evil','dark lord',
+        'wand','potion','spell','curse','ring of','amulet','crystal'
+    ],
+    'Fe y espiritualidad': [
+        'faith','god','jesus','christian','church','prayer','miracle','blessing',
+        'holy','divine','scripture','bible','religious','spiritual','salvation',
+        'redemption','heaven','soul','worship','pastor','angel','chapel',
+        'can only imagine','testimony','revival','mission'
+    ],
+    'Independientes': [
+        'indie','independent','sundance','film festival','arthouse','art house',
+        'low budget','experimental','avant garde','short film','underground'
+    ],
+    'Internacionales': [],
+    'Latinoamericanas': [
+        'latino','latina','latin','colombia','mexico','argentina','peru','chile',
+        'venezuela','brasil','brazil','cuba','bolivia','ecuador','paraguay','uruguay',
+        'dominican','puerto rico','telenovela','cartel','narco','favela','barrio'
+    ],
+    'Los favoritos de la crítica': [
+        'award','oscar','golden globe','cannes','sundance','bafta','critic',
+        'acclaimed','masterpiece','cinematic','opus','magnum','prestige',
+        'nomination','winner','best picture','best film','palm d\'or'
+    ],
+    'Música y musicales': [
+        'music','musical','concert','song','songs','dance','dancer','singer',
+        'band','rock','jazz','pop','rhythm','melody','opera','symphony','choir',
+        'soundtrack','anthem','remix','album','tour','stage','perform',
+        'bts','elvis','taylor','beatles','queen','bohemian','rapsody','rap','hip hop',
+        'arirang','comeback live'
+    ],
+    'Orgullo': [
+        'lgbtq','pride','gay','lesbian','queer','transgender','bisexual','rainbow',
+        'drag','coming out','identity','love wins','same sex','two spirit'
+    ],
+    'Para reír': [
+        'comedy','funny','hilarious','humor','humour','joke','laughing','absurd',
+        'parody','satire','spoof','silly','goofy','awkward','mishap','blunder',
+        'prank','standup','stand-up','comedian','roast','wit','slapstick'
+    ],
+    'Para ver en familia': [
+        'family','kids','children','animation','animated','cartoon','pixar',
+        'adventure','journey','magical','wonder','imagination','bedtime','story',
+        'puppy','dog','cat','pet','animal','friend','school','young','teen',
+        'princess','prince','fairy tale','holiday special'
+    ],
+    'Pelis policiales': [
+        'police','cop','detective','crime','murder','homicide','investigation',
+        'fbi','cia','interpol','forensic','evidence','case','suspect','criminal',
+        'mafia','mob','gang','undercover','corrupt','justice','law','court',
+        'prison','inmate','escape','heist','robbery','theft','smuggling'
+    ],
+    'Romances': [
+        'love','romance','heart','kiss','wedding','bride','marriage','affair',
+        'valentine','sweetheart','beloved','passion','desire','soulmate',
+        'together','forever','couple','relationship','dating','proposal',
+        'engagement','honeymoon','love story','loving','falling for'
+    ],
+    'Sci-fi': [
+        'space','galaxy','star ','alien','robot','future','quantum','cyber',
+        'android','planet','universe','cosmos','asteroid','meteor','dimension',
+        'time travel','wormhole','spaceship','station','mars','moon','orbital',
+        'interstellar','intergalactic','extraterrestrial','artificial intelligence',
+        'clone','mutation','evolution','dystopia','utopia','cyberpunk','matrix'
+    ],
+    'Terror': [
+        'horror','terror','evil','ghost','haunted','zombie','vampire','witch',
+        'monster','demon','curse','darkness','nightmare','fear','blood','dead ',
+        'killer','scream','sinister','creep','paranormal','possession','haunting',
+        'supernatural','devil','satan','shadow','dread','chill','eerie','macabre',
+        'slasher','psycho','hellfire','plague','reaper','undead','exorcism',
+        'ritual','sacrifice','cult','occult','gravey','cemeter','coffin','crypt',
+        'gothic','creature','beast','werewolf','frankenstein','dracula'
+    ]
+};
+
+// Indicadores de español en el título
+const SPANISH_CHARS = /[áéíóúñüÁÉÍÓÚÑÜ¿¡]/;
+const SPANISH_WORDS = /\b(el|la|los|las|un|una|de|del|en|con|por|para|hasta|como|cuando|donde|amor|vida|noche|día|dia|corazón|corazon|tiempo|hombre|mujer|familia|tierra|luz|mar|sol|muerte|guerra|rey|reina|sangre|fuego|agua|sueño|verdad|mentira|secreto|camino)\b/i;
+
+function detectSpanish(title) {
+    return SPANISH_CHARS.test(title) || SPANISH_WORDS.test(title);
+}
+
+function categorizeMovie(item) {
+    // Si el JSON ya trae categoría, usarla directamente
+    if (item.category) {
+        const cats = Array.isArray(item.category) ? item.category : [item.category];
+        return cats.filter(c => CATEGORIES.includes(c));
+    }
+    if (item.genre) {
+        const genres = Array.isArray(item.genre) ? item.genre : [item.genre];
+        const matched = genres.filter(g => CATEGORIES.includes(g));
+        if (matched.length) return matched;
+    }
+
+    const t = (item.title || '').toLowerCase();
+    const found = [];
+
+    // Detección por palabras clave
+    for (const [cat, keys] of Object.entries(KEYWORDS)) {
+        if (cat === 'En Español' || cat === 'Internacionales') continue;
+        if (keys.some(k => t.includes(k.toLowerCase()))) {
+            found.push(cat);
+        }
+    }
+
+    // Detección de español
+    if (detectSpanish(item.title || '')) found.push('En Español');
+
+    // Latinoamericanas implica también Internacionales
+    if (found.includes('Latinoamericanas') && !found.includes('Internacionales')) {
+        found.push('Internacionales');
+    }
+
+    // Si tiene idioma distinto al inglés y no es español → Internacionales
+    if (item.language && item.language !== 'en' && item.language !== 'es') {
+        if (!found.includes('Internacionales')) found.push('Internacionales');
+    }
+
+    return found;
+}
 
 app.use(compression({
     filter: (req, res) => {
@@ -59,11 +279,15 @@ function loadData() {
             .map(item => ({
                 title: String(item.title).trim(),
                 logo: item.logo || '',
-                url: item.url || ''
+                url: item.url || '',
+                categories: categorizeMovie(item)
             }))
             .sort((a, b) => a.title.localeCompare(b.title));
 
+        const catCounts = {};
+        MOVIES_LIST.forEach(m => m.categories.forEach(c => { catCounts[c] = (catCounts[c] || 0) + 1; }));
         console.log('[OK] ' + MOVIES_LIST.length + ' películas');
+        console.log('[CATS]', Object.entries(catCounts).map(([k,v]) => k + ':' + v).join(', '));
     } catch (e) { console.error('[ERROR]', e.message); }
 }
 
@@ -80,14 +304,26 @@ app.use((req, res, next) => {
 
 app.get('/api/stats', (req, res) => res.json({ movies: MOVIES_LIST.length }));
 
+app.get('/api/categories', (req, res) => {
+    const counts = {};
+    MOVIES_LIST.forEach(m => m.categories.forEach(c => { counts[c] = (counts[c] || 0) + 1; }));
+    res.json({
+        data: CATEGORIES.map(name => ({ name, count: counts[name] || 0 }))
+    });
+});
+
 app.get('/api/movies', (req, res) => {
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 250;
     const search = (req.query.q || '').toLowerCase();
+    const cat = req.query.cat || '';
     const random = req.query.random === 'true';
+
     let list = [...MOVIES_LIST];
+    if (cat) list = list.filter(m => m.categories.includes(cat));
     if (search) list = list.filter(m => m.title.toLowerCase().includes(search));
     if (random) for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+
     const start = page * limit;
     res.json({ total: list.length, page, hasMore: start + limit < list.length, data: list.slice(start, start + limit) });
 });
@@ -104,7 +340,6 @@ app.get('/video-proxy', videoProxyLimiter, (req, res) => {
     }
 
     const client = parsed.protocol === 'https:' ? https : http;
-
     const opts = {
         hostname: parsed.hostname,
         port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
@@ -128,38 +363,24 @@ app.get('/video-proxy', videoProxyLimiter, (req, res) => {
             proxyRes.destroy();
             return res.redirect('/video-proxy?url=' + encodeURIComponent(proxyRes.headers.location));
         }
-
         const headers = {
             'Content-Type': proxyRes.headers['content-type'] || 'video/mp4',
             'Accept-Ranges': 'bytes',
             'Cache-Control': 'public, max-age=3600',
             'X-Content-Type-Options': 'nosniff'
         };
-
         if (proxyRes.headers['content-length']) headers['Content-Length'] = proxyRes.headers['content-length'];
         if (proxyRes.headers['content-range']) headers['Content-Range'] = proxyRes.headers['content-range'];
-
         res.writeHead(proxyRes.statusCode, headers);
         proxyRes.pipe(res, { end: true });
-
         proxyRes.on('error', (err) => {
-            console.error('[PROXY STREAM ERROR]', err.message);
             if (!res.headersSent) res.status(502).json({ error: 'Stream error' });
             else res.end();
         });
     });
 
-    proxyReq.on('timeout', () => {
-        console.error('[PROXY TIMEOUT]');
-        proxyReq.destroy();
-        if (!res.headersSent) res.status(504).json({ error: 'Timeout' });
-    });
-
-    proxyReq.on('error', (err) => {
-        console.error('[PROXY ERROR]', err.message);
-        if (!res.headersSent) res.status(502).json({ error: 'Connection error' });
-    });
-
+    proxyReq.on('timeout', () => { proxyReq.destroy(); if (!res.headersSent) res.status(504).json({ error: 'Timeout' }); });
+    proxyReq.on('error', (err) => { if (!res.headersSent) res.status(502).json({ error: 'Connection error' }); });
     req.on('close', () => proxyReq.destroy());
     proxyReq.end();
 });
@@ -177,12 +398,20 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,syste
 #app{height:100%;display:flex;flex-direction:column}
 
 .hdr{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
-.logo{color:var(--accent);font-weight:700;font-size:20px;letter-spacing:-1px}
-.srch{flex:1;background:var(--bg);border:2px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-size:14px;outline:none}
+.logo{color:var(--accent);font-weight:700;font-size:20px;letter-spacing:-1px;flex-shrink:0}
+.srch{flex:1;background:var(--bg);border:2px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-size:14px;outline:none;min-width:0}
 .srch:focus,.srch.f{border-color:var(--focus)}
-.btn{background:var(--card);border:2px solid var(--border);color:var(--text);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.btn{background:var(--card);border:2px solid var(--border);color:var(--text);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .btn.f{border-color:var(--focus)}
-.stats{color:var(--text2);font-size:12px}
+.stats{color:var(--text2);font-size:12px;white-space:nowrap;flex-shrink:0}
+
+.cats-wrap{background:var(--surface);border-bottom:1px solid var(--border);position:relative}
+.cats{display:flex;gap:8px;padding:10px 16px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{padding:7px 16px;background:var(--bg);border:2px solid var(--border);border-radius:20px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:border-color .1s}
+.cat.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.cat.f{border-color:var(--focus);color:var(--text)}
+.cat.on.f{border-color:#fff;color:#fff}
 
 .main{flex:1;overflow-y:auto;padding:12px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
@@ -272,6 +501,40 @@ video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
         <button class="btn" id="mix">Aleatorio</button>
         <span class="stats" id="stats"></span>
     </div>
+
+    <div class="cats-wrap">
+        <div class="cats" id="cats">
+            <button class="cat on" data-cat="">Todas</button>
+            <button class="cat" data-cat="Acción">Acción</button>
+            <button class="cat" data-cat="Adaptaciones de libros">Adaptaciones de libros</button>
+            <button class="cat" data-cat="Anime">Anime</button>
+            <button class="cat" data-cat="Astrología">Astrología</button>
+            <button class="cat" data-cat="Cine de intriga">Cine de intriga</button>
+            <button class="cat" data-cat="Clásicas">Clásicas</button>
+            <button class="cat" data-cat="Cortos">Cortos</button>
+            <button class="cat" data-cat="De Hollywood">De Hollywood</button>
+            <button class="cat" data-cat="Deportes">Deportes</button>
+            <button class="cat" data-cat="Documentales">Documentales</button>
+            <button class="cat" data-cat="Dramas">Dramas</button>
+            <button class="cat" data-cat="En Español">En Español</button>
+            <button class="cat" data-cat="Estados de ánimo">Estados de ánimo</button>
+            <button class="cat" data-cat="Fantasía">Fantasía</button>
+            <button class="cat" data-cat="Fe y espiritualidad">Fe y espiritualidad</button>
+            <button class="cat" data-cat="Independientes">Independientes</button>
+            <button class="cat" data-cat="Internacionales">Internacionales</button>
+            <button class="cat" data-cat="Latinoamericanas">Latinoamericanas</button>
+            <button class="cat" data-cat="Los favoritos de la crítica">Los favoritos de la crítica</button>
+            <button class="cat" data-cat="Música y musicales">Música y musicales</button>
+            <button class="cat" data-cat="Orgullo">Orgullo</button>
+            <button class="cat" data-cat="Para reír">Para reír</button>
+            <button class="cat" data-cat="Para ver en familia">Para ver en familia</button>
+            <button class="cat" data-cat="Pelis policiales">Pelis policiales</button>
+            <button class="cat" data-cat="Romances">Romances</button>
+            <button class="cat" data-cat="Sci-fi">Sci-fi</button>
+            <button class="cat" data-cat="Terror">Terror</button>
+        </div>
+    </div>
+
     <div class="main" id="main">
         <div class="grid" id="grid"><div class="msg load">Cargando</div></div>
     </div>
@@ -334,15 +597,17 @@ const $=id=>document.getElementById(id);
 
 const state = {
     view: 'home',
+    zone: 'hdr',       // 'hdr' | 'cats' | 'grid'
     movieIdx: 0,
     currentList: [],
+    activeCat: '',
     page: 0,
     hasMore: true,
     loading: false,
     cols: 5,
     focused: null,
     playing: false,
-    lastFocused: null,
+    lastFocused: { hdr: null, cats: null, grid: null },
     retryCount: 0,
     maxRetries: 3
 };
@@ -351,6 +616,7 @@ let hideT, volT, indT, nextT, bufferCheckT;
 
 const el = {
     grid: $('grid'), main: $('main'), srch: $('srch'), mix: $('mix'), stats: $('stats'),
+    cats: $('cats'),
     player: $('player'), vid: $('vid'), pUi: $('p-ui'), pTitle: $('p-title'), pStatus: $('p-status'),
     pLoad: $('p-load'), pLoadTxt: $('p-load-txt'), pErr: $('p-err'), pErrSub: $('p-err-sub'), pRetry: $('p-retry'), pBack: $('p-back'),
     pInd: $('p-ind'), pVol: $('p-vol'), pVolFill: $('p-vol-fill'), pVolPct: $('p-vol-pct'),
@@ -360,82 +626,150 @@ const el = {
     pNext: $('p-next'), pNextT: $('p-next-t'), pNextCd: $('p-next-cd'), pNextPlay: $('p-next-play'), pNextCancel: $('p-next-cancel')
 };
 
+// ===== INIT =====
 function initHistory() {
     history.replaceState({ view: 'home' }, '', '#home');
-    window.addEventListener('popstate', function(e) {
-        if (state.view === 'player') closePlayerInternal();
-    });
+    window.addEventListener('popstate', () => { if (state.view === 'player') closePlayerInternal(); });
 }
-
-function pushView(view) { history.pushState({ view }, '', '#' + view); }
+function pushView(v) { history.pushState({ view: v }, '', '#' + v); }
 
 initHistory();
 fetch('/api/stats').then(r => r.json()).then(d => { el.stats.textContent = d.movies + ' películas'; }).catch(() => {});
-load(false, true);
+load(false, false);
 calcCols();
 window.addEventListener('resize', calcCols);
 document.addEventListener('keydown', onKey, true);
 setupPlayer();
 setupMouse();
-setTimeout(() => focusFirst(), 300);
+setTimeout(() => focusZone('hdr'), 300);
 
+// ===== CATEGORÍAS =====
+[...el.cats.querySelectorAll('.cat')].forEach(btn => {
+    btn.addEventListener('click', () => selectCat(btn));
+});
+
+function selectCat(btn) {
+    [...el.cats.querySelectorAll('.cat')].forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    state.activeCat = btn.dataset.cat;
+    el.srch.value = '';
+    load(false, false);
+}
+
+// ===== LAYOUT =====
 function calcCols() {
     const c = el.grid.querySelector('.card');
     if (c) { const w = el.grid.offsetWidth, cw = c.offsetWidth + 10; state.cols = Math.max(1, Math.floor(w / cw)); }
 }
 
+// ===== FOCUS SYSTEM =====
+function focus(elem) {
+    if (state.focused) state.focused.classList.remove('f');
+    state.focused = elem;
+    if (elem) { elem.classList.add('f'); elem.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+}
+
+function focusZone(zone) {
+    state.zone = zone;
+    if (zone === 'hdr') {
+        const prev = state.lastFocused.hdr;
+        const items = [el.srch, el.mix];
+        focus(prev && items.includes(prev) ? prev : el.srch);
+    } else if (zone === 'cats') {
+        const prev = state.lastFocused.cats;
+        const cats = [...el.cats.querySelectorAll('.cat')];
+        const active = cats.find(c => c.classList.contains('on'));
+        focus(prev && cats.includes(prev) ? prev : active || cats[0]);
+    } else if (zone === 'grid') {
+        const prev = state.lastFocused.grid;
+        const cards = [...el.grid.querySelectorAll('.card')].filter(e => e.offsetParent);
+        focus(prev && cards.includes(prev) ? prev : cards[0]);
+    }
+}
+
+function saveFocus() {
+    if (state.zone === 'hdr') state.lastFocused.hdr = state.focused;
+    else if (state.zone === 'cats') state.lastFocused.cats = state.focused;
+    else if (state.zone === 'grid') state.lastFocused.grid = state.focused;
+}
+
+// ===== KEYBOARD =====
 function onKey(e) {
     const k = e.key;
-    const navKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', ' '];
+    const navKeys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter',' '];
     if (navKeys.includes(k)) { e.preventDefault(); e.stopPropagation(); }
+
     if (state.view === 'player') { playerKey(k); return; }
+
     if (document.activeElement === el.srch) {
-        if (k === 'ArrowDown') { el.srch.blur(); focusFirst(); }
+        if (k === 'ArrowDown') { el.srch.blur(); saveFocus(); focusZone('cats'); }
         return;
     }
+
     switch (k) {
-        case 'ArrowUp': move('up'); break;
-        case 'ArrowDown': move('down'); break;
-        case 'ArrowLeft': move('left'); break;
-        case 'ArrowRight': move('right'); break;
+        case 'ArrowUp':    moveUp(); break;
+        case 'ArrowDown':  moveDown(); break;
+        case 'ArrowLeft':  moveLeft(); break;
+        case 'ArrowRight': moveRight(); break;
         case 'Enter': case ' ': activate(); break;
     }
 }
 
-function getFocusable() {
-    if (state.view === 'home') return [...document.querySelectorAll('#srch,#mix,.card')].filter(e => e.offsetParent);
-    return [];
+function moveUp() {
+    if (state.zone === 'grid') {
+        const cards = [...el.grid.querySelectorAll('.card')].filter(e => e.offsetParent);
+        const ci = cards.indexOf(state.focused);
+        if (ci >= 0 && ci < state.cols) {
+            saveFocus(); state.lastFocused.grid = state.focused; focusZone('cats');
+        } else if (ci >= state.cols) {
+            focus(cards[ci - state.cols]);
+        }
+    } else if (state.zone === 'cats') {
+        saveFocus(); focusZone('hdr');
+    }
 }
 
-function focus(elem) {
-    if (state.focused) state.focused.classList.remove('f');
-    state.focused = elem;
-    if (elem) { elem.classList.add('f'); elem.scrollIntoView({ block: 'nearest' }); }
+function moveDown() {
+    if (state.zone === 'hdr') {
+        saveFocus(); focusZone('cats');
+    } else if (state.zone === 'cats') {
+        saveFocus();
+        const cards = [...el.grid.querySelectorAll('.card')].filter(e => e.offsetParent);
+        if (cards.length) { state.zone = 'grid'; focus(cards[0]); }
+    } else if (state.zone === 'grid') {
+        const cards = [...el.grid.querySelectorAll('.card')].filter(e => e.offsetParent);
+        const ci = cards.indexOf(state.focused);
+        const ni = ci + state.cols;
+        if (ni < cards.length) focus(cards[ni]);
+        else if (state.hasMore) load(true, false);
+    }
 }
 
-function focusFirst() {
-    const f = getFocusable();
-    if (state.lastFocused && f.includes(state.lastFocused)) { focus(state.lastFocused); return; }
-    const card = f.find(e => e.classList.contains('card'));
-    focus(card || f[0]);
+function moveLeft() {
+    if (state.zone === 'hdr') {
+        if (state.focused === el.mix) focus(el.srch);
+    } else if (state.zone === 'cats') {
+        const cats = [...el.cats.querySelectorAll('.cat')];
+        const ci = cats.indexOf(state.focused);
+        if (ci > 0) focus(cats[ci - 1]);
+    } else if (state.zone === 'grid') {
+        const cards = [...el.grid.querySelectorAll('.card')].filter(e => e.offsetParent);
+        const ci = cards.indexOf(state.focused);
+        if (ci > 0) focus(cards[ci - 1]);
+    }
 }
 
-function saveFocus() { state.lastFocused = state.focused; }
-
-function move(dir) {
-    const f = getFocusable(), i = f.indexOf(state.focused);
-    if (i < 0) { focusFirst(); return; }
-    const cards = f.filter(e => e.classList.contains('card'));
-    const ci = cards.indexOf(state.focused);
-    if (ci >= 0) {
-        if (dir === 'up') { if (ci < state.cols) focus(el.mix); else focus(cards[ci - state.cols]); }
-        if (dir === 'down') { const ni = ci + state.cols; if (ni < cards.length) focus(cards[ni]); else if (state.hasMore) load(true, false); }
-        if (dir === 'left' && ci > 0) focus(cards[ci - 1]);
-        if (dir === 'right' && ci < cards.length - 1) focus(cards[ci + 1]);
-    } else {
-        if (state.focused === el.srch && dir === 'right') focus(el.mix);
-        if (state.focused === el.mix && dir === 'left') focus(el.srch);
-        if (dir === 'down' && cards.length) focus(cards[0]);
+function moveRight() {
+    if (state.zone === 'hdr') {
+        if (state.focused === el.srch) focus(el.mix);
+    } else if (state.zone === 'cats') {
+        const cats = [...el.cats.querySelectorAll('.cat')];
+        const ci = cats.indexOf(state.focused);
+        if (ci < cats.length - 1) focus(cats[ci + 1]);
+    } else if (state.zone === 'grid') {
+        const cards = [...el.grid.querySelectorAll('.card')].filter(e => e.offsetParent);
+        const ci = cards.indexOf(state.focused);
+        if (ci < cards.length - 1) focus(cards[ci + 1]);
     }
 }
 
@@ -445,7 +779,7 @@ function activate() {
     state.focused.click();
 }
 
-// ===== PLAYER =====
+// ===== PLAYER KEYS =====
 function playerKey(k) {
     showUI();
     switch (k) {
@@ -463,8 +797,7 @@ function togglePlay() {
 }
 
 function seek(s) {
-    const newTime = Math.max(0, Math.min(el.vid.currentTime + s, el.vid.duration || 0));
-    el.vid.currentTime = newTime;
+    el.vid.currentTime = Math.max(0, Math.min(el.vid.currentTime + s, el.vid.duration || 0));
     showInd((s > 0 ? '+' : '') + s + 's');
 }
 
@@ -497,10 +830,10 @@ function showUI() {
     }, 3000);
 }
 
+// ===== PLAYER SETUP =====
 function setupPlayer() {
     const v = el.vid;
-    v.preload = 'auto';
-    v.playsInline = true;
+    v.preload = 'auto'; v.playsInline = true;
 
     v.addEventListener('loadstart', () => { el.pLoad.classList.add('show'); el.pErr.classList.remove('show'); el.pLoadTxt.textContent = 'Conectando...'; updateStatus('Conectando...'); });
     v.addEventListener('loadedmetadata', () => { el.pLoadTxt.textContent = 'Cargando video...'; updateStatus('Preparando...'); });
@@ -536,31 +869,17 @@ function setupPlayer() {
 function handleVideoError() {
     const error = el.vid.error;
     let msg = 'Error desconocido';
-    if (error) {
-        switch(error.code) {
-            case 1: msg = 'Carga abortada'; break;
-            case 2: msg = 'Error de red'; break;
-            case 3: msg = 'Error de decodificación'; break;
-            case 4: msg = 'Formato no soportado'; break;
-        }
-    }
+    if (error) { switch(error.code) { case 1: msg='Carga abortada'; break; case 2: msg='Error de red'; break; case 3: msg='Error de decodificación'; break; case 4: msg='Formato no soportado'; break; } }
     el.pErrSub.textContent = msg;
     if (error && error.code === 2 && state.retryCount < state.maxRetries) {
         state.retryCount++;
         el.pLoadTxt.textContent = 'Reintentando... (' + state.retryCount + '/' + state.maxRetries + ')';
         updateStatus('Reintentando...');
         setTimeout(retry, 2000);
-    } else {
-        el.pLoad.classList.remove('show');
-        el.pErr.classList.add('show');
-        stopBufferMonitor();
-    }
+    } else { el.pLoad.classList.remove('show'); el.pErr.classList.add('show'); stopBufferMonitor(); }
 }
 
-function handlePlayError(e) {
-    if (e.name === 'NotAllowedError') el.pPp.textContent = 'PLAY';
-}
-
+function handlePlayError(e) { if (e.name === 'NotAllowedError') el.pPp.textContent = 'PLAY'; }
 function updateStatus(text) { el.pStatus.textContent = text; }
 
 function startBufferMonitor() {
@@ -591,12 +910,10 @@ function updateBuf() {
 }
 
 function retry() {
-    el.pErr.classList.remove('show');
-    el.pLoad.classList.add('show');
-    el.pLoadTxt.textContent = 'Reintentando...';
-    const currentTime = el.vid.currentTime, src = el.vid.src;
+    el.pErr.classList.remove('show'); el.pLoad.classList.add('show'); el.pLoadTxt.textContent = 'Reintentando...';
+    const t = el.vid.currentTime, s = el.vid.src;
     el.vid.src = '';
-    setTimeout(() => { el.vid.src = src; el.vid.currentTime = currentTime; el.vid.play().catch(handlePlayError); }, 500);
+    setTimeout(() => { el.vid.src = s; el.vid.currentTime = t; el.vid.play().catch(handlePlayError); }, 500);
 }
 
 function checkNext() {
@@ -611,10 +928,7 @@ function showNext() {
     el.pNext.classList.add('show');
     let c = 8;
     el.pNextCd.textContent = 'En ' + c + 's';
-    nextT = setInterval(() => {
-        c--; el.pNextCd.textContent = 'En ' + c + 's';
-        if (c <= 0) { clearInterval(nextT); nextT = null; nextMovie(); }
-    }, 1000);
+    nextT = setInterval(() => { c--; el.pNextCd.textContent = 'En ' + c + 's'; if (c <= 0) { clearInterval(nextT); nextT = null; nextMovie(); } }, 1000);
     showUI();
 }
 
@@ -625,34 +939,20 @@ function nextMovie() { hideNext(); if (hasNext()) { state.movieIdx++; playMovie(
 function prevMovie() { if (state.movieIdx > 0) { state.movieIdx--; playMovie(state.currentList[state.movieIdx]); } }
 
 function playMovie(movie) {
-    state.retryCount = 0;
-    hideNext();
-    el.pErr.classList.remove('show');
-    el.pLoad.classList.add('show');
-    el.pLoadTxt.textContent = 'Conectando...';
-
+    state.retryCount = 0; hideNext(); el.pErr.classList.remove('show'); el.pLoad.classList.add('show'); el.pLoadTxt.textContent = 'Conectando...';
     let u = movie.url;
     if (u.startsWith('http://')) u = '/video-proxy?url=' + encodeURIComponent(u);
-
-    el.vid.pause();
-    el.vid.removeAttribute('src');
-    el.vid.load();
-
-    setTimeout(() => {
-        el.vid.src = u;
-        el.pTitle.textContent = movie.title;
-        el.vid.play().catch(handlePlayError);
-        showUI();
-    }, 100);
+    el.vid.pause(); el.vid.removeAttribute('src'); el.vid.load();
+    setTimeout(() => { el.vid.src = u; el.pTitle.textContent = movie.title; el.vid.play().catch(handlePlayError); showUI(); }, 100);
 }
 
 function fmt(s) {
     if (!s || isNaN(s)) return '0:00';
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = Math.floor(s % 60);
-    return h > 0 ? h + ':' + String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0') : m + ':' + String(ss).padStart(2,'0');
+    const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), ss = Math.floor(s%60);
+    return h > 0 ? h+':'+String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0') : m+':'+String(ss).padStart(2,'0');
 }
 
-// ===== CARGA DE PELÍCULAS =====
+// ===== CARGA =====
 function load(append, random) {
     if (state.loading || (append && !state.hasMore)) return;
     state.loading = true;
@@ -660,29 +960,25 @@ function load(append, random) {
 
     let u = '/api/movies?page=' + state.page + '&limit=250';
     if (el.srch.value.trim()) u += '&q=' + encodeURIComponent(el.srch.value.trim());
+    if (state.activeCat) u += '&cat=' + encodeURIComponent(state.activeCat);
     if (random) u += '&random=true';
 
     fetch(u).then(r => r.json()).then(d => {
         if (!append) el.grid.innerHTML = '';
-        if (!d.data.length && !append) { el.grid.innerHTML = '<div class="msg">Sin resultados</div>'; return; }
-        d.data.forEach((m, i) => {
-            state.currentList.push(m);
-            el.grid.appendChild(mkCard(m, state.currentList.length - 1));
-        });
+        if (!d.data.length && !append) { el.grid.innerHTML = '<div class="msg">Sin resultados en esta categoría</div>'; return; }
+        d.data.forEach(m => { state.currentList.push(m); el.grid.appendChild(mkCard(m, state.currentList.length - 1)); });
         state.page++; state.hasMore = d.hasMore;
         calcCols();
-        if (!append) setTimeout(focusFirst, 50);
-    }).catch(() => {
-        if (!append) el.grid.innerHTML = '<div class="msg">Error al cargar</div>';
-    }).finally(() => state.loading = false);
+        if (!append) setTimeout(() => focusZone('grid'), 50);
+    }).catch(() => { if (!append) el.grid.innerHTML = '<div class="msg">Error al cargar</div>'; })
+    .finally(() => state.loading = false);
 }
 
 function mkCard(m, idx) {
     const d = document.createElement('div');
     d.className = 'card';
     d.innerHTML = '<img data-src="' + esc(m.logo) + '"><div class="card-t">' + esc(m.title) + '</div>';
-    const img = d.querySelector('img');
-    obs.observe(img);
+    obs.observe(d.querySelector('img'));
     d.onclick = () => openPlayer(idx);
     return d;
 }
@@ -698,29 +994,21 @@ const obs = new IntersectionObserver(es => {
 }, { rootMargin: '200px' });
 
 function openPlayer(idx) {
-    saveFocus();
-    state.view = 'player';
-    state.movieIdx = idx;
-    pushView('player');
-    playMovie(state.currentList[idx]);
-    el.player.classList.add('open');
+    saveFocus(); state.view = 'player'; state.movieIdx = idx;
+    pushView('player'); playMovie(state.currentList[idx]); el.player.classList.add('open');
 }
 
 function closePlayerInternal() {
-    el.vid.pause();
-    el.vid.removeAttribute('src');
-    el.vid.load();
-    el.player.classList.remove('open');
-    state.view = 'home';
-    hideNext();
-    stopBufferMonitor();
-    setTimeout(focusFirst, 50);
+    el.vid.pause(); el.vid.removeAttribute('src'); el.vid.load();
+    el.player.classList.remove('open'); state.view = 'home'; hideNext(); stopBufferMonitor();
+    setTimeout(() => focusZone('grid'), 50);
 }
 
+// ===== MOUSE =====
 function setupMouse() {
     el.mix.onclick = () => load(false, true);
     let t;
-    el.srch.oninput = () => { clearTimeout(t); t = setTimeout(() => load(false, !el.srch.value.trim()), 300); };
+    el.srch.oninput = () => { clearTimeout(t); t = setTimeout(() => { state.activeCat = ''; [...el.cats.querySelectorAll('.cat')].forEach(b => b.classList.toggle('on', !b.dataset.cat)); load(false, false); }, 300); };
     el.main.onscroll = () => {
         if (!state.loading && state.hasMore) {
             const { scrollTop, scrollHeight, clientHeight } = el.main;
