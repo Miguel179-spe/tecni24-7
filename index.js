@@ -10,15 +10,13 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const config = { DATA_FILE: process.env.DATA_FILE || 'data.json' };
+const config = { DATA_FILE: process.env.DATA_FILE || 'movies.json' };
 
-// ===== OPTIMIZACIÓN 1: Compresión SOLO para contenido que lo necesita =====
 app.use(compression({
     filter: (req, res) => {
-        // NO comprimir streams de video/audio
         if (req.path === '/video-proxy') return false;
         if (req.headers.accept && (
-            req.headers.accept.includes('video') || 
+            req.headers.accept.includes('video') ||
             req.headers.accept.includes('audio')
         )) return false;
         return compression.filter(req, res);
@@ -41,15 +39,13 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-const videoProxyLimiter = rateLimit({ 
-    windowMs: 15 * 60 * 1000, 
-    max: 500, // Aumentado para streaming
-    skip: (req) => req.headers.range // No limitar requests de range
+const videoProxyLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 500,
+    skip: (req) => req.headers.range
 });
 
-let SERIES_LIST = [];
-let SERIES_INDEX = {};
-let TOTAL_EPISODES = 0;
+let MOVIES_LIST = [];
 
 function loadData() {
     try {
@@ -58,60 +54,44 @@ function loadData() {
         const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
         if (!Array.isArray(data)) return;
 
-        TOTAL_EPISODES = data.length;
-        const map = {};
-        data.forEach(item => {
-            const name = item.series || 'Sin nombre';
-            const season = String(item.season || '1');
-            if (!map[name]) map[name] = { name, poster: item["logo serie"] || '', seasons: {}, count: 0 };
-            if (!map[name].seasons[season]) map[name].seasons[season] = [];
-            map[name].seasons[season].push({ ep: item.ep || 1, title: item.title || 'Episodio ' + (item.ep || 1), url: item.url || '' });
-            map[name].count++;
-        });
+        MOVIES_LIST = data
+            .filter(item => item.title && item.url)
+            .map(item => ({
+                title: String(item.title).trim(),
+                logo: item.logo || '',
+                url: item.url || ''
+            }))
+            .sort((a, b) => a.title.localeCompare(b.title));
 
-        Object.values(map).forEach(s => Object.keys(s.seasons).forEach(k => s.seasons[k].sort((a, b) => a.ep - b.ep)));
-        SERIES_INDEX = map;
-        SERIES_LIST = Object.values(map).map(s => ({ name: s.name, poster: s.poster, seasons: Object.keys(s.seasons).length, count: s.count })).sort((a, b) => a.name.localeCompare(b.name));
-        console.log('[OK] ' + SERIES_LIST.length + ' series, ' + TOTAL_EPISODES + ' episodios');
+        console.log('[OK] ' + MOVIES_LIST.length + ' películas');
     } catch (e) { console.error('[ERROR]', e.message); }
 }
 
 loadData();
 
-// ===== OPTIMIZACIÓN 2: Headers CORS mejorados para streaming =====
-app.use((req, res, next) => { 
+app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type, Accept');
     res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length, Content-Type');
-
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(204);
-    }
-    next(); 
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
 });
 
-app.get('/api/stats', (req, res) => res.json({ series: SERIES_LIST.length, episodes: TOTAL_EPISODES }));
+app.get('/api/stats', (req, res) => res.json({ movies: MOVIES_LIST.length }));
 
-app.get('/api/series', (req, res) => {
+app.get('/api/movies', (req, res) => {
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 250;
     const search = (req.query.q || '').toLowerCase();
     const random = req.query.random === 'true';
-    let list = [...SERIES_LIST];
-    if (search) list = list.filter(s => s.name.toLowerCase().includes(search));
+    let list = [...MOVIES_LIST];
+    if (search) list = list.filter(m => m.title.toLowerCase().includes(search));
     if (random) for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
     const start = page * limit;
     res.json({ total: list.length, page, hasMore: start + limit < list.length, data: list.slice(start, start + limit) });
 });
 
-app.get('/api/series/:name', (req, res) => {
-    const series = SERIES_INDEX[decodeURIComponent(req.params.name)];
-    if (!series) return res.status(404).json({ error: 'No encontrada' });
-    res.json({ data: series });
-});
-
-// ===== OPTIMIZACIÓN 3: Proxy de Video COMPLETAMENTE REESCRITO =====
 app.get('/video-proxy', videoProxyLimiter, (req, res) => {
     const url = req.query.url;
     if (!url) return res.status(400).json({ error: 'URL requerida' });
@@ -125,36 +105,30 @@ app.get('/video-proxy', videoProxyLimiter, (req, res) => {
 
     const client = parsed.protocol === 'https:' ? https : http;
 
-    const opts = { 
-        hostname: parsed.hostname, 
-        port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80), 
-        path: parsed.pathname + parsed.search, 
+    const opts = {
+        hostname: parsed.hostname,
+        port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+        path: parsed.pathname + parsed.search,
         method: 'GET',
-        timeout: 30000, // 30 segundos timeout
-        headers: { 
+        timeout: 30000,
+        headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': '*/*',
             'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
-            'Accept-Encoding': 'identity', // Sin compresión para video
+            'Accept-Encoding': 'identity',
             'Connection': 'keep-alive',
             'Referer': parsed.origin + '/'
-        } 
+        }
     };
 
-    // ===== CRÍTICO: Pasar Range header para streaming =====
-    if (req.headers.range) {
-        opts.headers['Range'] = req.headers.range;
-    }
+    if (req.headers.range) opts.headers['Range'] = req.headers.range;
 
     const proxyReq = client.request(opts, proxyRes => {
-        // Manejar redirects
         if ([301, 302, 303, 307, 308].includes(proxyRes.statusCode) && proxyRes.headers.location) {
-            // Limpiar listeners para evitar memory leak
             proxyRes.destroy();
             return res.redirect('/video-proxy?url=' + encodeURIComponent(proxyRes.headers.location));
         }
 
-        // Headers de respuesta optimizados para streaming
         const headers = {
             'Content-Type': proxyRes.headers['content-type'] || 'video/mp4',
             'Accept-Ranges': 'bytes',
@@ -162,64 +136,40 @@ app.get('/video-proxy', videoProxyLimiter, (req, res) => {
             'X-Content-Type-Options': 'nosniff'
         };
 
-        // Headers críticos para Range requests
-        if (proxyRes.headers['content-length']) {
-            headers['Content-Length'] = proxyRes.headers['content-length'];
-        }
-        if (proxyRes.headers['content-range']) {
-            headers['Content-Range'] = proxyRes.headers['content-range'];
-        }
+        if (proxyRes.headers['content-length']) headers['Content-Length'] = proxyRes.headers['content-length'];
+        if (proxyRes.headers['content-range']) headers['Content-Range'] = proxyRes.headers['content-range'];
 
-        // Status code correcto (206 para partial content)
-        const statusCode = proxyRes.statusCode;
-        res.writeHead(statusCode, headers);
-
-        // ===== CRÍTICO: Streaming directo sin buffering completo =====
+        res.writeHead(proxyRes.statusCode, headers);
         proxyRes.pipe(res, { end: true });
 
-        // Manejo de errores en el stream
         proxyRes.on('error', (err) => {
             console.error('[PROXY STREAM ERROR]', err.message);
-            if (!res.headersSent) {
-                res.status(502).json({ error: 'Stream error' });
-            } else {
-                res.end();
-            }
+            if (!res.headersSent) res.status(502).json({ error: 'Stream error' });
+            else res.end();
         });
     });
 
-    // Timeout
     proxyReq.on('timeout', () => {
         console.error('[PROXY TIMEOUT]');
         proxyReq.destroy();
-        if (!res.headersSent) {
-            res.status(504).json({ error: 'Timeout' });
-        }
+        if (!res.headersSent) res.status(504).json({ error: 'Timeout' });
     });
 
-    // Error de conexión
     proxyReq.on('error', (err) => {
         console.error('[PROXY ERROR]', err.message);
-        if (!res.headersSent) {
-            res.status(502).json({ error: 'Connection error' });
-        }
+        if (!res.headersSent) res.status(502).json({ error: 'Connection error' });
     });
 
-    // Cuando el cliente cierra la conexión
-    req.on('close', () => {
-        proxyReq.destroy();
-    });
-
+    req.on('close', () => proxyReq.destroy());
     proxyReq.end();
 });
 
-// ===== OPTIMIZACIÓN 4: HTML con Player Mejorado =====
 const HTML = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Stream+</title>
+<title>Stream+ Películas</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
 :root{--bg:#0a0a0a;--surface:#161616;--card:#1a1a1a;--border:#2a2a2a;--text:#e0e0e0;--text2:#707070;--accent:#c00;--focus:#fff}
@@ -246,25 +196,6 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,syste
 .card img.err{opacity:.2}
 .card-t{position:absolute;bottom:0;left:0;right:0;padding:30px 8px 8px;background:linear-gradient(transparent,#000);font-size:12px;font-weight:600;opacity:0}
 .card.f .card-t{opacity:1}
-
-.panel{position:fixed;inset:0;background:var(--bg);z-index:100;display:none;flex-direction:column}
-.panel.open{display:flex}
-.panel-hdr{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border)}
-.back{width:40px;height:40px;background:var(--card);border:2px solid transparent;border-radius:8px;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.back.f{border-color:var(--focus)}
-.panel-title{flex:1;font-size:18px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-.tabs{display:flex;gap:8px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
-.tab{padding:8px 18px;background:var(--bg);border:2px solid var(--border);border-radius:6px;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
-.tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.tab.f{border-color:var(--focus)}
-
-.list{flex:1;overflow-y:auto;padding:12px}
-.ep{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--card);border:2px solid transparent;border-radius:8px;margin-bottom:8px;cursor:pointer}
-.ep.f{border-color:var(--focus);background:var(--surface)}
-.ep-n{width:36px;height:36px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
-.ep-t{font-size:14px;font-weight:500}
-.ep-m{font-size:12px;color:var(--text2);margin-top:2px}
 
 .player{position:fixed;inset:0;background:#000;z-index:200;display:none}
 .player.open{display:block}
@@ -337,21 +268,12 @@ video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 <div id="app">
     <div class="hdr">
         <div class="logo">STREAM+</div>
-        <input class="srch" id="srch" placeholder="Buscar serie...">
+        <input class="srch" id="srch" placeholder="Buscar película...">
         <button class="btn" id="mix">Aleatorio</button>
         <span class="stats" id="stats"></span>
     </div>
     <div class="main" id="main">
         <div class="grid" id="grid"><div class="msg load">Cargando</div></div>
-    </div>
-
-    <div class="panel" id="detail">
-        <div class="panel-hdr">
-            <button class="back" id="det-back">◀</button>
-            <div class="panel-title" id="det-title"></div>
-        </div>
-        <div class="tabs" id="tabs"></div>
-        <div class="list" id="eps"></div>
     </div>
 
     <div class="player" id="player">
@@ -377,7 +299,7 @@ video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
                 <div class="p-status" id="p-status"></div>
             </div>
             <div class="p-next" id="p-next">
-                <div class="p-next-lbl">Siguiente</div>
+                <div class="p-next-lbl">Siguiente película</div>
                 <div class="p-next-t" id="p-next-t"></div>
                 <div class="p-next-cd" id="p-next-cd"></div>
                 <div class="p-next-btns">
@@ -412,16 +334,15 @@ const $=id=>document.getElementById(id);
 
 const state = {
     view: 'home',
-    series: null,
-    season: null,
-    epIdx: 0,
+    movieIdx: 0,
+    currentList: [],
     page: 0,
     hasMore: true,
     loading: false,
     cols: 5,
     focused: null,
     playing: false,
-    lastFocused: { home: null, detail: null },
+    lastFocused: null,
     retryCount: 0,
     maxRetries: 3
 };
@@ -430,7 +351,6 @@ let hideT, volT, indT, nextT, bufferCheckT;
 
 const el = {
     grid: $('grid'), main: $('main'), srch: $('srch'), mix: $('mix'), stats: $('stats'),
-    detail: $('detail'), detBack: $('det-back'), detTitle: $('det-title'), tabs: $('tabs'), eps: $('eps'),
     player: $('player'), vid: $('vid'), pUi: $('p-ui'), pTitle: $('p-title'), pStatus: $('p-status'),
     pLoad: $('p-load'), pLoadTxt: $('p-load-txt'), pErr: $('p-err'), pErrSub: $('p-err-sub'), pRetry: $('p-retry'), pBack: $('p-back'),
     pInd: $('p-ind'), pVol: $('p-vol'), pVolFill: $('p-vol-fill'), pVolPct: $('p-vol-pct'),
@@ -440,38 +360,17 @@ const el = {
     pNext: $('p-next'), pNextT: $('p-next-t'), pNextCd: $('p-next-cd'), pNextPlay: $('p-next-play'), pNextCancel: $('p-next-cancel')
 };
 
-// ===== HISTORY API =====
 function initHistory() {
     history.replaceState({ view: 'home' }, '', '#home');
     window.addEventListener('popstate', function(e) {
-        handleHistoryBack(e.state);
+        if (state.view === 'player') closePlayerInternal();
     });
 }
 
-function pushView(view) {
-    history.pushState({ view: view }, '', '#' + view);
-}
+function pushView(view) { history.pushState({ view }, '', '#' + view); }
 
-function handleHistoryBack(historyState) {
-    if (!historyState) {
-        history.pushState({ view: 'home' }, '', '#home');
-        return;
-    }
-
-    if (state.view === 'player') {
-        closePlayerInternal();
-        history.pushState({ view: 'detail' }, '', '#detail');
-    } else if (state.view === 'detail') {
-        closeDetailInternal();
-        history.pushState({ view: 'home' }, '', '#home');
-    } else {
-        history.pushState({ view: 'home' }, '', '#home');
-    }
-}
-
-// Init
 initHistory();
-fetch('/api/stats').then(r => r.json()).then(d => { el.stats.textContent = d.series + ' series'; }).catch(() => {});
+fetch('/api/stats').then(r => r.json()).then(d => { el.stats.textContent = d.movies + ' películas'; }).catch(() => {});
 load(false, true);
 calcCols();
 window.addEventListener('resize', calcCols);
@@ -482,34 +381,18 @@ setTimeout(() => focusFirst(), 300);
 
 function calcCols() {
     const c = el.grid.querySelector('.card');
-    if (c) {
-        const w = el.grid.offsetWidth, cw = c.offsetWidth + 10;
-        state.cols = Math.max(1, Math.floor(w / cw));
-    }
+    if (c) { const w = el.grid.offsetWidth, cw = c.offsetWidth + 10; state.cols = Math.max(1, Math.floor(w / cw)); }
 }
 
 function onKey(e) {
     const k = e.key;
     const navKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', ' '];
-
-    if (navKeys.includes(k)) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    if (state.view === 'player') {
-        playerKey(k);
-        return;
-    }
-
+    if (navKeys.includes(k)) { e.preventDefault(); e.stopPropagation(); }
+    if (state.view === 'player') { playerKey(k); return; }
     if (document.activeElement === el.srch) {
-        if (k === 'ArrowDown') {
-            el.srch.blur();
-            focusFirst();
-        }
+        if (k === 'ArrowDown') { el.srch.blur(); focusFirst(); }
         return;
     }
-
     switch (k) {
         case 'ArrowUp': move('up'); break;
         case 'ArrowDown': move('down'); break;
@@ -521,93 +404,38 @@ function onKey(e) {
 
 function getFocusable() {
     if (state.view === 'home') return [...document.querySelectorAll('#srch,#mix,.card')].filter(e => e.offsetParent);
-    if (state.view === 'detail') return [...document.querySelectorAll('#det-back,.tab,.ep')].filter(e => e.offsetParent);
     return [];
 }
 
 function focus(elem) {
     if (state.focused) state.focused.classList.remove('f');
     state.focused = elem;
-    if (elem) {
-        elem.classList.add('f');
-        elem.scrollIntoView({ block: 'nearest' });
-    }
+    if (elem) { elem.classList.add('f'); elem.scrollIntoView({ block: 'nearest' }); }
 }
 
 function focusFirst() {
     const f = getFocusable();
-    if (state.view === 'home') {
-        if (state.lastFocused.home && f.includes(state.lastFocused.home)) {
-            focus(state.lastFocused.home);
-        } else {
-            const card = f.find(e => e.classList.contains('card'));
-            focus(card || f[0]);
-        }
-    } else if (state.view === 'detail') {
-        if (state.lastFocused.detail && f.includes(state.lastFocused.detail)) {
-            focus(state.lastFocused.detail);
-        } else {
-            const ep = f.find(e => e.classList.contains('ep'));
-            focus(ep || f[0]);
-        }
-    }
+    if (state.lastFocused && f.includes(state.lastFocused)) { focus(state.lastFocused); return; }
+    const card = f.find(e => e.classList.contains('card'));
+    focus(card || f[0]);
 }
 
-function saveFocus() {
-    if (state.view === 'home') state.lastFocused.home = state.focused;
-    else if (state.view === 'detail') state.lastFocused.detail = state.focused;
-}
+function saveFocus() { state.lastFocused = state.focused; }
 
 function move(dir) {
     const f = getFocusable(), i = f.indexOf(state.focused);
     if (i < 0) { focusFirst(); return; }
-
-    if (state.view === 'home') {
-        const cards = f.filter(e => e.classList.contains('card'));
-        const ci = cards.indexOf(state.focused);
-        if (ci >= 0) {
-            if (dir === 'up') {
-                if (ci < state.cols) focus(el.mix);
-                else focus(cards[ci - state.cols]);
-            }
-            if (dir === 'down') {
-                const ni = ci + state.cols;
-                if (ni < cards.length) focus(cards[ni]);
-                else if (state.hasMore) load(true, false);
-            }
-            if (dir === 'left' && ci > 0) focus(cards[ci - 1]);
-            if (dir === 'right' && ci < cards.length - 1) focus(cards[ci + 1]);
-        } else {
-            if (state.focused === el.srch && dir === 'right') focus(el.mix);
-            if (state.focused === el.mix && dir === 'left') focus(el.srch);
-            if (dir === 'down' && cards.length) focus(cards[0]);
-        }
-    }
-
-    if (state.view === 'detail') {
-        const tabs = f.filter(e => e.classList.contains('tab'));
-        const eps = f.filter(e => e.classList.contains('ep'));
-        const ti = tabs.indexOf(state.focused);
-        const ei = eps.indexOf(state.focused);
-
-        if (state.focused === el.detBack) {
-            if (dir === 'down' && tabs.length) focus(tabs[0]);
-            if (dir === 'right' && tabs.length) focus(tabs[0]);
-        } else if (ti >= 0) {
-            if (dir === 'up') focus(el.detBack);
-            if (dir === 'down' && eps.length) focus(eps[0]);
-            if (dir === 'left') {
-                if (ti > 0) focus(tabs[ti - 1]);
-                else focus(el.detBack);
-            }
-            if (dir === 'right' && ti < tabs.length - 1) focus(tabs[ti + 1]);
-        } else if (ei >= 0) {
-            if (dir === 'up') {
-                if (ei > 0) focus(eps[ei - 1]);
-                else if (tabs.length) focus(tabs[0]);
-            }
-            if (dir === 'down' && ei < eps.length - 1) focus(eps[ei + 1]);
-        }
+    const cards = f.filter(e => e.classList.contains('card'));
+    const ci = cards.indexOf(state.focused);
+    if (ci >= 0) {
+        if (dir === 'up') { if (ci < state.cols) focus(el.mix); else focus(cards[ci - state.cols]); }
+        if (dir === 'down') { const ni = ci + state.cols; if (ni < cards.length) focus(cards[ni]); else if (state.hasMore) load(true, false); }
+        if (dir === 'left' && ci > 0) focus(cards[ci - 1]);
+        if (dir === 'right' && ci < cards.length - 1) focus(cards[ci + 1]);
+    } else {
+        if (state.focused === el.srch && dir === 'right') focus(el.mix);
+        if (state.focused === el.mix && dir === 'left') focus(el.srch);
+        if (dir === 'down' && cards.length) focus(cards[0]);
     }
 }
 
@@ -617,7 +445,7 @@ function activate() {
     state.focused.click();
 }
 
-// ===== PLAYER OPTIMIZADO =====
+// ===== PLAYER =====
 function playerKey(k) {
     showUI();
     switch (k) {
@@ -630,13 +458,8 @@ function playerKey(k) {
 }
 
 function togglePlay() {
-    if (el.vid.paused) { 
-        el.vid.play().catch(handlePlayError); 
-        showInd('▶'); 
-    } else { 
-        el.vid.pause(); 
-        showInd('⏸'); 
-    }
+    if (el.vid.paused) { el.vid.play().catch(handlePlayError); showInd('▶'); }
+    else { el.vid.pause(); showInd('⏸'); }
 }
 
 function seek(s) {
@@ -674,114 +497,45 @@ function showUI() {
     }, 3000);
 }
 
-// ===== OPTIMIZACIÓN 5: Manejo mejorado de eventos de video =====
 function setupPlayer() {
     const v = el.vid;
-
-    // Configuración óptima del video
     v.preload = 'auto';
     v.playsInline = true;
 
-    v.addEventListener('loadstart', () => { 
-        el.pLoad.classList.add('show'); 
-        el.pErr.classList.remove('show'); 
-        el.pLoadTxt.textContent = 'Conectando...';
-        updateStatus('Conectando...');
-    });
-
-    v.addEventListener('loadedmetadata', () => {
-        el.pLoadTxt.textContent = 'Cargando video...';
-        updateStatus('Preparando...');
-    });
-
-    v.addEventListener('loadeddata', () => {
-        el.pLoadTxt.textContent = 'Casi listo...';
-    });
-
-    v.addEventListener('canplay', () => {
-        el.pLoad.classList.remove('show');
-        updateStatus('');
-        state.retryCount = 0; // Reset retry count on success
-    });
-
-    v.addEventListener('canplaythrough', () => {
-        el.pLoad.classList.remove('show');
-        updateStatus('');
-    });
-
-    v.addEventListener('waiting', () => { 
-        el.pLoad.classList.add('show');
-        el.pLoadTxt.textContent = 'Buffering...';
-        updateStatus('Buffering...');
-    });
-
-    v.addEventListener('playing', () => { 
-        el.pLoad.classList.remove('show'); 
-        state.playing = true; 
-        el.pPp.textContent = 'PAUSE'; 
-        hideNext();
-        updateStatus('');
-        startBufferMonitor();
-    });
-
-    v.addEventListener('pause', () => { 
-        state.playing = false; 
-        el.pPp.textContent = 'PLAY';
-        stopBufferMonitor();
-    });
-
-    v.addEventListener('timeupdate', () => { 
-        updateProg(); 
-        checkNext(); 
-    });
-
+    v.addEventListener('loadstart', () => { el.pLoad.classList.add('show'); el.pErr.classList.remove('show'); el.pLoadTxt.textContent = 'Conectando...'; updateStatus('Conectando...'); });
+    v.addEventListener('loadedmetadata', () => { el.pLoadTxt.textContent = 'Cargando video...'; updateStatus('Preparando...'); });
+    v.addEventListener('loadeddata', () => { el.pLoadTxt.textContent = 'Casi listo...'; });
+    v.addEventListener('canplay', () => { el.pLoad.classList.remove('show'); updateStatus(''); state.retryCount = 0; });
+    v.addEventListener('canplaythrough', () => { el.pLoad.classList.remove('show'); updateStatus(''); });
+    v.addEventListener('waiting', () => { el.pLoad.classList.add('show'); el.pLoadTxt.textContent = 'Buffering...'; updateStatus('Buffering...'); });
+    v.addEventListener('playing', () => { el.pLoad.classList.remove('show'); state.playing = true; el.pPp.textContent = 'PAUSE'; hideNext(); updateStatus(''); startBufferMonitor(); });
+    v.addEventListener('pause', () => { state.playing = false; el.pPp.textContent = 'PLAY'; stopBufferMonitor(); });
+    v.addEventListener('timeupdate', () => { updateProg(); checkNext(); });
     v.addEventListener('progress', updateBuf);
-
-    v.addEventListener('durationchange', () => { 
-        el.pDur.textContent = fmt(v.duration); 
-    });
-
+    v.addEventListener('durationchange', () => { el.pDur.textContent = fmt(v.duration); });
     v.addEventListener('volumechange', updateVol);
-
-    v.addEventListener('ended', () => {
-        stopBufferMonitor();
-        showNext();
-    });
-
-    // ===== OPTIMIZACIÓN 6: Manejo mejorado de errores =====
+    v.addEventListener('ended', () => { stopBufferMonitor(); showNext(); });
     v.addEventListener('error', handleVideoError);
-
-    v.addEventListener('stalled', () => {
-        console.log('Stream stalled, checking connection...');
-        updateStatus('Reconectando...');
-        el.pLoadTxt.textContent = 'Reconectando...';
-    });
-
-    v.addEventListener('suspend', () => {
-        console.log('Download suspended');
-    });
+    v.addEventListener('stalled', () => { updateStatus('Reconectando...'); el.pLoadTxt.textContent = 'Reconectando...'; });
 
     el.pPp.onclick = togglePlay;
     el.pRw.onclick = () => seek(-10);
     el.pFw.onclick = () => seek(10);
-    el.pPrev.onclick = prevEp;
-    el.pNxt.onclick = nextEp;
+    el.pPrev.onclick = prevMovie;
+    el.pNxt.onclick = nextMovie;
     el.pRetry.onclick = retry;
     el.pBack.onclick = () => history.back();
-    el.pNextPlay.onclick = nextEp;
+    el.pNextPlay.onclick = nextMovie;
     el.pNextCancel.onclick = cancelNext;
     el.pBar.onclick = e => {
         const r = el.pBar.getBoundingClientRect();
-        const percent = (e.clientX - r.left) / r.width;
-        el.vid.currentTime = percent * el.vid.duration;
+        el.vid.currentTime = ((e.clientX - r.left) / r.width) * el.vid.duration;
     };
 }
 
-function handleVideoError(e) {
-    console.error('Video error:', e);
+function handleVideoError() {
     const error = el.vid.error;
     let msg = 'Error desconocido';
-
     if (error) {
         switch(error.code) {
             case 1: msg = 'Carga abortada'; break;
@@ -790,58 +544,37 @@ function handleVideoError(e) {
             case 4: msg = 'Formato no soportado'; break;
         }
     }
-
     el.pErrSub.textContent = msg;
-
-    // Auto-retry para errores de red
     if (error && error.code === 2 && state.retryCount < state.maxRetries) {
         state.retryCount++;
         el.pLoadTxt.textContent = 'Reintentando... (' + state.retryCount + '/' + state.maxRetries + ')';
         updateStatus('Reintentando...');
         setTimeout(retry, 2000);
     } else {
-        el.pLoad.classList.remove('show'); 
+        el.pLoad.classList.remove('show');
         el.pErr.classList.add('show');
         stopBufferMonitor();
     }
 }
 
 function handlePlayError(e) {
-    console.error('Play error:', e);
-    if (e.name === 'NotAllowedError') {
-        // Autoplay blocked, show play button
-        el.pPp.textContent = 'PLAY';
-    }
+    if (e.name === 'NotAllowedError') el.pPp.textContent = 'PLAY';
 }
 
-function updateStatus(text) {
-    el.pStatus.textContent = text;
-}
+function updateStatus(text) { el.pStatus.textContent = text; }
 
-// ===== OPTIMIZACIÓN 7: Monitor de buffer =====
 function startBufferMonitor() {
     stopBufferMonitor();
     bufferCheckT = setInterval(() => {
         if (el.vid.buffered.length > 0) {
-            const buffered = el.vid.buffered.end(el.vid.buffered.length - 1);
-            const current = el.vid.currentTime;
-            const bufferAhead = buffered - current;
-
-            if (bufferAhead < 2 && !el.vid.paused) {
-                updateStatus('Buffer bajo...');
-            } else if (bufferAhead > 5) {
-                updateStatus('');
-            }
+            const ahead = el.vid.buffered.end(el.vid.buffered.length - 1) - el.vid.currentTime;
+            if (ahead < 2 && !el.vid.paused) updateStatus('Buffer bajo...');
+            else if (ahead > 5) updateStatus('');
         }
     }, 1000);
 }
 
-function stopBufferMonitor() {
-    if (bufferCheckT) {
-        clearInterval(bufferCheckT);
-        bufferCheckT = null;
-    }
-}
+function stopBufferMonitor() { if (bufferCheckT) { clearInterval(bufferCheckT); bufferCheckT = null; } }
 
 function updateProg() {
     const p = el.vid.duration ? (el.vid.currentTime / el.vid.duration) * 100 : 0;
@@ -861,18 +594,9 @@ function retry() {
     el.pErr.classList.remove('show');
     el.pLoad.classList.add('show');
     el.pLoadTxt.textContent = 'Reintentando...';
-
-    const currentTime = el.vid.currentTime;
-    const src = el.vid.src;
-
+    const currentTime = el.vid.currentTime, src = el.vid.src;
     el.vid.src = '';
-
-    // Pequeño delay antes de reintentar
-    setTimeout(() => {
-        el.vid.src = src;
-        el.vid.currentTime = currentTime;
-        el.vid.play().catch(handlePlayError);
-    }, 500);
+    setTimeout(() => { el.vid.src = src; el.vid.currentTime = currentTime; el.vid.play().catch(handlePlayError); }, 500);
 }
 
 function checkNext() {
@@ -882,99 +606,84 @@ function checkNext() {
 
 function showNext() {
     if (!hasNext()) return;
-    const n = getNext();
-    el.pNextT.textContent = 'E' + n.ep + ' - ' + n.title;
+    const n = state.currentList[state.movieIdx + 1];
+    el.pNextT.textContent = n.title;
     el.pNext.classList.add('show');
     let c = 8;
     el.pNextCd.textContent = 'En ' + c + 's';
     nextT = setInterval(() => {
         c--; el.pNextCd.textContent = 'En ' + c + 's';
-        if (c <= 0) { clearInterval(nextT); nextT = null; nextEp(); }
+        if (c <= 0) { clearInterval(nextT); nextT = null; nextMovie(); }
     }, 1000);
     showUI();
 }
 
 function hideNext() { el.pNext.classList.remove('show'); if (nextT) { clearInterval(nextT); nextT = null; } }
 function cancelNext() { hideNext(); }
-function hasNext() { return state.series && state.epIdx < state.series.seasons[state.season].length - 1; }
-function getNext() { return state.series.seasons[state.season][state.epIdx + 1]; }
-function nextEp() { hideNext(); if (hasNext()) { state.epIdx++; playEp(state.series.seasons[state.season][state.epIdx]); } }
-function prevEp() { if (state.epIdx > 0) { state.epIdx--; playEp(state.series.seasons[state.season][state.epIdx]); } }
+function hasNext() { return state.movieIdx < state.currentList.length - 1; }
+function nextMovie() { hideNext(); if (hasNext()) { state.movieIdx++; playMovie(state.currentList[state.movieIdx]); } }
+function prevMovie() { if (state.movieIdx > 0) { state.movieIdx--; playMovie(state.currentList[state.movieIdx]); } }
 
-// ===== OPTIMIZACIÓN 8: Función de reproducción mejorada =====
-function playEp(ep) {
+function playMovie(movie) {
     state.retryCount = 0;
     hideNext();
     el.pErr.classList.remove('show');
     el.pLoad.classList.add('show');
     el.pLoadTxt.textContent = 'Conectando...';
 
-    let u = ep.url;
-    // Usar proxy para URLs HTTP o si hay problemas de CORS
-    if (u.startsWith('http://') || shouldUseProxy(u)) {
-        u = '/video-proxy?url=' + encodeURIComponent(u);
-    }
+    let u = movie.url;
+    if (u.startsWith('http://')) u = '/video-proxy?url=' + encodeURIComponent(u);
 
-    // Limpiar video anterior
     el.vid.pause();
     el.vid.removeAttribute('src');
     el.vid.load();
 
-    // Pequeño delay para asegurar limpieza
     setTimeout(() => {
         el.vid.src = u;
-        el.pTitle.textContent = ep.title;
+        el.pTitle.textContent = movie.title;
         el.vid.play().catch(handlePlayError);
         showUI();
     }, 100);
 }
 
-function shouldUseProxy(url) {
-    // Lista de dominios que necesitan proxy
-    const proxyDomains = ['example.com']; // Añadir dominios problemáticos
-    try {
-        const parsed = new URL(url);
-        return proxyDomains.some(d => parsed.hostname.includes(d));
-    } catch {
-        return false;
-    }
-}
-
 function fmt(s) {
     if (!s || isNaN(s)) return '0:00';
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = Math.floor(s % 60);
-    return h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0') : m + ':' + String(ss).padStart(2, '0');
+    return h > 0 ? h + ':' + String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0') : m + ':' + String(ss).padStart(2,'0');
 }
 
-// ===== SERIES =====
+// ===== CARGA DE PELÍCULAS =====
 function load(append, random) {
     if (state.loading || (append && !state.hasMore)) return;
     state.loading = true;
-    if (!append) { el.grid.innerHTML = '<div class="msg load">Cargando</div>'; state.page = 0; state.hasMore = true; }
+    if (!append) { el.grid.innerHTML = '<div class="msg load">Cargando</div>'; state.page = 0; state.hasMore = true; state.currentList = []; }
 
-    let u = '/api/series?page=' + state.page + '&limit=250';
+    let u = '/api/movies?page=' + state.page + '&limit=250';
     if (el.srch.value.trim()) u += '&q=' + encodeURIComponent(el.srch.value.trim());
     if (random) u += '&random=true';
 
     fetch(u).then(r => r.json()).then(d => {
         if (!append) el.grid.innerHTML = '';
         if (!d.data.length && !append) { el.grid.innerHTML = '<div class="msg">Sin resultados</div>'; return; }
-        d.data.forEach(s => el.grid.appendChild(mkCard(s)));
+        d.data.forEach((m, i) => {
+            state.currentList.push(m);
+            el.grid.appendChild(mkCard(m, state.currentList.length - 1));
+        });
         state.page++; state.hasMore = d.hasMore;
         calcCols();
         if (!append) setTimeout(focusFirst, 50);
     }).catch(() => {
-        if (!append) el.grid.innerHTML = '<div class="msg">Error</div>';
+        if (!append) el.grid.innerHTML = '<div class="msg">Error al cargar</div>';
     }).finally(() => state.loading = false);
 }
 
-function mkCard(s) {
+function mkCard(m, idx) {
     const d = document.createElement('div');
     d.className = 'card';
-    d.innerHTML = '<img data-src="' + esc(s.poster) + '"><div class="card-t">' + esc(s.name) + '</div>';
+    d.innerHTML = '<img data-src="' + esc(m.logo) + '"><div class="card-t">' + esc(m.title) + '</div>';
     const img = d.querySelector('img');
     obs.observe(img);
-    d.onclick = () => openDetail(s.name);
+    d.onclick = () => openPlayer(idx);
     return d;
 }
 
@@ -988,73 +697,12 @@ const obs = new IntersectionObserver(es => {
     });
 }, { rootMargin: '200px' });
 
-// ===== DETAIL =====
-function openDetail(name) {
-    saveFocus();
-    state.view = 'detail';
-    state.lastFocused.detail = null;
-    pushView('detail');
-    el.detTitle.textContent = name;
-    el.detail.classList.add('open');
-    el.tabs.innerHTML = '<div class="msg load"></div>';
-    el.eps.innerHTML = '';
-
-    fetch('/api/series/' + encodeURIComponent(name)).then(r => r.json()).then(res => {
-        state.series = res.data;
-        const ks = Object.keys(state.series.seasons).sort((a, b) => a - b);
-        state.season = ks[0];
-        renderTabs(ks);
-        renderEps();
-        setTimeout(focusFirst, 50);
-    }).catch(() => el.tabs.innerHTML = '<div class="msg">Error</div>');
-}
-
-function renderTabs(ks) {
-    el.tabs.innerHTML = '';
-    ks.forEach(k => {
-        const t = document.createElement('button');
-        t.className = 'tab' + (k === state.season ? ' on' : '');
-        t.textContent = 'T' + k;
-        t.onclick = () => {
-            state.season = k;
-            el.tabs.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.textContent === 'T' + k));
-            renderEps();
-        };
-        el.tabs.appendChild(t);
-    });
-}
-
-function renderEps() {
-    const eps = state.series?.seasons[state.season];
-    if (!eps?.length) { el.eps.innerHTML = '<div class="msg">Sin episodios</div>'; return; }
-    el.eps.innerHTML = '';
-    eps.forEach((ep, i) => {
-        const d = document.createElement('div');
-        d.className = 'ep';
-        d.innerHTML = '<div class="ep-n">' + ep.ep + '</div><div><div class="ep-t">' + esc(ep.title) + '</div><div class="ep-m">Temporada ' + state.season + '</div></div>';
-        d.onclick = () => { state.epIdx = i; openPlayer(ep); };
-        el.eps.appendChild(d);
-    });
-}
-
-function closeDetailInternal() {
-    el.detail.classList.remove('open');
-    state.view = 'home';
-    state.series = null;
-    state.lastFocused.detail = null;
-    setTimeout(focusFirst, 50);
-}
-
-function closeDetail() {
-    history.back();
-}
-
-// ===== PLAYER =====
-function openPlayer(ep) {
+function openPlayer(idx) {
     saveFocus();
     state.view = 'player';
+    state.movieIdx = idx;
     pushView('player');
-    playEp(ep);
+    playMovie(state.currentList[idx]);
     el.player.classList.add('open');
 }
 
@@ -1063,19 +711,13 @@ function closePlayerInternal() {
     el.vid.removeAttribute('src');
     el.vid.load();
     el.player.classList.remove('open');
-    state.view = 'detail';
+    state.view = 'home';
     hideNext();
     stopBufferMonitor();
     setTimeout(focusFirst, 50);
 }
 
-function closePlayer() {
-    history.back();
-}
-
-// ===== MOUSE =====
 function setupMouse() {
-    el.detBack.onclick = closeDetail;
     el.mix.onclick = () => load(false, true);
     let t;
     el.srch.oninput = () => { clearTimeout(t); t = setTimeout(() => load(false, !el.srch.value.trim()), 300); };
@@ -1090,16 +732,16 @@ function setupMouse() {
     el.player.ontouchmove = showUI;
 }
 
-function esc(s) { return s ? String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]) : '' }
+function esc(s) { return s ? String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]) : ''; }
 })();
 </script>
 </body>
 </html>`;
 
 app.get('/', (req, res) => { res.setHeader('Content-Type', 'text/html'); res.send(HTML); });
-app.get('/health', (req, res) => res.json({ ok: true, series: SERIES_LIST.length }));
+app.get('/health', (req, res) => res.json({ ok: true, movies: MOVIES_LIST.length }));
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log('Stream+ | Puerto ' + PORT + ' | ' + SERIES_LIST.length + ' series');
+    console.log('Stream+ Películas | Puerto ' + PORT + ' | ' + MOVIES_LIST.length + ' películas');
 });
