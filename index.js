@@ -479,7 +479,7 @@ app.get('/video-proxy', videoProxyLimiter, (req, res) => {
         port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
         path: parsed.pathname + parsed.search,
         method: 'GET',
-        timeout: 30000,
+        timeout: 120000,
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': '*/*',
@@ -1054,8 +1054,8 @@ function startBufferMonitor() {
     bufferCheckT = setInterval(() => {
         if (el.vid.buffered.length > 0) {
             const ahead = el.vid.buffered.end(el.vid.buffered.length - 1) - el.vid.currentTime;
-            if (ahead < 2 && !el.vid.paused) updateStatus('Buffer bajo...');
-            else if (ahead > 5) updateStatus('');
+            if (ahead < 10 && !el.vid.paused) updateStatus('Buffer bajo...');
+            else if (ahead > 20) updateStatus('');
         }
     }, 1000);
 }
