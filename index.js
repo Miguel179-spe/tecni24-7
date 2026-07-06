@@ -42,7 +42,6 @@ const CATEGORIES = [
     'Romances',
     'Sci-fi',
     'Terror',
-	'2026',
 	'2025',
 	'2024',
 	'2023',
