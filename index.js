@@ -14,7 +14,7 @@ const config = { DATA_FILE: process.env.DATA_FILE || 'data.json' };
 
 // ===== CATEGORÍAS =====
 const CATEGORIES = [
-    
+    '2026',
     'Acción',
     'Adaptaciones de libros',
     'Anime',
